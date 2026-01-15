@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TEI Annotator</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="landing-body">
+
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+    </button>
+
+    <div class="upload-card">
+        <div class="logo-area">
+            <span class="brand-lg">TEI<span style="opacity:0.5; font-weight:400;">Edit</span></span>
+        </div>
+        <p class="subtitle">Upload Transkribus PageXML to start annotating.</p>
+
+        <form action="{{ url_for('index') }}" method="POST" enctype="multipart/form-data">
+            
+            <div class="file-drop-area" id="drop-area">
+                <span class="fake-btn">Choose PageXML File</span>
+                <span class="file-msg" id="file-msg">or drag and drop here</span>
+                <input class="file-input" type="file" name="file" accept=".xml" required onchange="updateFileName(this)">
+            </div>
+
+            <button type="submit" class="btn-block">Start Project</button>
+        </form>
+    </div>
+
+    <script>
+        function updateFileName(input) {
+            const msg = document.getElementById('file-msg');
+            const area = document.getElementById('drop-area');
+            if (input.files && input.files.length > 0) {
+                msg.textContent = input.files[0].name;
+                msg.style.color = "var(--text-color)";
+                area.classList.add('is-active');
+            } else {
+                msg.textContent = "or drag and drop here";
+                area.classList.remove('is-active');
+            }
+        }
+        
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+        if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+    </script>
+</body>
+</html>

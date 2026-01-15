@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tag Definition Wizard</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .attr-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        .attr-table th { text-align: left; color: var(--text-muted); font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+        .attr-table td { padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        .attr-table input { width: 95%; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-color); }
+        .attr-btn-remove { color: #d32f2f; background: none; border: none; cursor: pointer; font-size: 1.2rem; line-height: 1; }
+        .btn-small { padding: 4px 10px; font-size: 0.8rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--text-color); }
+        .btn-small:hover { background: var(--border-color); }
+    </style>
+</head>
+<body>
+
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+    </button>
+
+    <div id="tags-data" data-tags='{{ tags|tojson|safe }}' style="display:none;"></div>
+
+    <div class="wizard-container">
+        
+        <div class="creator-card">
+            <div class="wizard-header">
+                <button class="nav-arrow" id="btn-prev" onclick="prevStep()" disabled title="Back">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <div class="step-title" id="step-title">Step 1: Select Category</div>
+                <div style="width:32px;"></div> </div>
+
+            <form method="POST" id="mainForm" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
+                <input type="hidden" name="action" id="formAction" value="add">
+                
+                <div class="wizard-body">
+                    
+                    <div id="step-1">
+                        <h2>Select Category</h2>
+                        <p class="desc">How does this tag function within the text?</p>
+                        <div class="category-grid">
+                            <div class="cat-card" onclick="selectCategory('visual')">
+                                <svg class="cat-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                <span class="cat-title">Visual / Rendition</span>
+                                <span class="cat-sub">Highlights, additions, font styles.</span>
+                            </div>
+                            <div class="cat-card" onclick="selectCategory('editorial')">
+                                <svg class="cat-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                <span class="cat-title">Editorial Intervention</span>
+                                <span class="cat-sub">Corrections, deletions, expansions.</span>
+                            </div>
+                            <div class="cat-card" onclick="selectCategory('semantic')">
+                                <svg class="cat-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"/></svg>
+                                <span class="cat-title">Semantic Content</span>
+                                <span class="cat-sub">Names, places, dates, entities.</span>
+                            </div>
+                            <div class="cat-card" onclick="selectCategory('structural')">
+                                <svg class="cat-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg>
+                                <span class="cat-title">Structure</span>
+                                <span class="cat-sub">Lists, items, page breaks.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="step-2" style="display:none; flex-direction:column; height:100%;">
+                        <h2>Choose Definition</h2>
+                        <p class="desc" style="margin-bottom:15px;">Search standard TEI tags or create a custom one.</p>
+                        <input type="text" class="search-box" id="searchInput" placeholder="Search..." onkeyup="filterLibrary()">
+                        <div class="library-scroll" id="libraryList"></div>
+                        <button type="button" class="custom-add-btn" onclick="selectCustom()"><span>+</span> Create Custom Tag Definition</button>
+                    </div>
+
+                    <div id="step-3" style="display:none;">
+                        <h2>Configure Tag</h2>
+                        <p class="desc">Fine-tune the display and attributes.</p>
+                        <div class="form-grid">
+                            <div class="input-wrap"><label>Display Label</label><input type="text" name="label" id="inp-label" required></div>
+                            <div class="input-wrap"><label>XML Tag Name (Code)</label><input type="text" name="code" id="inp-code" required readonly></div>
+                            <div class="input-wrap full-width"><label>Description</label><input type="text" name="description" id="inp-desc"></div>
+                            
+                            <div class="input-wrap full-width">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label>Attributes</label>
+                                    <button type="button" class="btn-small" onclick="addAttrRow()">+ Add Attribute</button>
+                                </div>
+                                <table class="attr-table">
+                                    <thead><tr><th width="30%">Name</th><th width="30%">Label</th><th>Description</th><th width="5%"></th></tr></thead>
+                                    <tbody id="attr-tbody"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="input-wrap"><label>Color</label><input type="color" name="color" id="inp-color" value="#e3f2fd" style="height:40px; padding:2px; cursor:pointer;"></div>
+                        </div>
+                        <input type="hidden" name="category" id="inp-category">
+                    </div>
+                </div>
+
+                <div class="wizard-footer" id="wizard-footer" style="display:none;">
+                    <button type="submit" class="primary">Save Definition</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="library-card">
+            <h3 style="margin-top:0;">Your Definitions</h3>
+            <div style="flex:1; overflow-y:auto;" id="currentTagsList"></div>
+            
+            <div class="return-btn-wrapper">
+                <a href="/" class="btn-secondary" style="width:100%;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="15 18 9 12 15 6"></polyline></svg> 
+                    Return to Editor
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- THEME ---
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+        if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+
+        // --- GLOBAL CLICK FOR DROPDOWNS ---
+        window.onclick = function(event) {
+            if (!event.target.closest('.kebab-container')) {
+                document.querySelectorAll('.kebab-dropdown').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.kebab-btn').forEach(b => b.classList.remove('active'));
+            }
+        }
+
+        // --- WIZARD NAV ---
+        let currentStep = 1;
+        function updateNav() {
+            document.getElementById('btn-prev').disabled = currentStep === 1;
+            const titles = {1: "Step 1: Select Category", 2: "Step 2: Choose Definition", 3: "Step 3: Configuration"};
+            document.getElementById('step-title').textContent = titles[currentStep];
+            document.getElementById('wizard-footer').style.display = (currentStep === 3) ? 'flex' : 'none';
+        }
+        function prevStep() { 
+            if(currentStep > 1){ 
+                document.getElementById(`step-${currentStep}`).style.display='none'; 
+                currentStep--; 
+                document.getElementById(`step-${currentStep}`).style.display=currentStep===2?'flex':'block'; 
+                updateNav(); 
+            } 
+        }
+        function nextToStep(step) { 
+            document.getElementById(`step-${currentStep}`).style.display='none'; 
+            currentStep=step; 
+            document.getElementById(`step-${currentStep}`).style.display=step===2?'flex':'block'; 
+            updateNav(); 
+        }
+
+        // --- ATTRIBUTE LOGIC ---
+        function addAttrRow(name='', label='', desc='') {
+            const tbody = document.getElementById('attr-tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" name="attr_name[]" value="${name}" placeholder="xml_attr" required></td>
+                <td><input type="text" name="attr_label[]" value="${label}" placeholder="UI Label"></td>
+                <td><input type="text" name="attr_desc[]" value="${desc}" placeholder="Desc..."></td>
+                <td><button type="button" class="attr-btn-remove" onclick="this.closest('tr').remove()">&times;</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // --- MENU & EDIT LOGIC ---
+        const tagsData = JSON.parse(document.getElementById('tags-data').dataset.tags || "[]");
+
+        function toggleMenu(btn, code) {
+            // Close others
+            document.querySelectorAll('.kebab-dropdown').forEach(d => d.id !== `menu-${code}` && d.classList.remove('show'));
+            const menu = document.getElementById(`menu-${code}`);
+            menu.classList.toggle('show');
+            btn.classList.toggle('active');
+        }
+
+        function editTag(code) {
+            const tag = tagsData.find(t => t.code === code);
+            if(!tag) return;
+
+            document.getElementById('formAction').value = 'edit';
+            document.getElementById('inp-category').value = tag.category;
+            
+            document.getElementById('inp-code').value = tag.code;
+            document.getElementById('inp-code').readOnly = true; 
+            document.getElementById('inp-label').value = tag.label;
+            document.getElementById('inp-desc').value = tag.description || '';
+            document.getElementById('inp-color').value = tag.color;
+            
+            document.getElementById('attr-tbody').innerHTML = '';
+            if (tag.attrs) {
+                tag.attrs.forEach(a => addAttrRow(a.name, a.label, a.desc || ''));
+            }
+
+            // Hide Steps 1 & 2, Show Step 3
+            document.querySelectorAll('.wizard-body > div').forEach(d => d.style.display='none');
+            currentStep = 3;
+            document.getElementById('step-3').style.display='block';
+            updateNav();
+        }
+
+        // --- RENDER TAG LIST ---
+        document.getElementById('currentTagsList').innerHTML = tagsData.length ? tagsData.map(t => `
+            <div class="current-tag-item" style="border-left-color: ${t.color}">
+                <div class="tag-item-info">
+                    <span class="tag-item-label">${t.label}</span>
+                    <span class="tag-item-code">&lt;${t.code}&gt;</span>
+                </div>
+                
+                <div class="kebab-container">
+                    <button type="button" class="kebab-btn" onclick="toggleMenu(this, '${t.code}')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </button>
+                    <div class="kebab-dropdown" id="menu-${t.code}">
+                        <button type="button" class="menu-option" onclick="editTag('${t.code}')">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            Edit
+                        </button>
+                        <form method="POST" style="margin:0; width:100%;">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="code" value="${t.code}">
+                            <button class="menu-option danger">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `).join('') : '<div style="padding:20px; text-align:center; color:var(--text-muted);">No tags yet.</div>';
+
+        // --- PRESETS ---
+        const TEI_LIBRARY = [
+            { code: 'hi', cat: 'visual', label: 'Highlight', desc: 'Text that is visually distinct.', attrs: [{name:'rend', label:'Style'}] },
+            { code: 'del', cat: 'editorial', label: 'Deletion', desc: 'Text marked for deletion.', attrs: [{name:'rend', label:'Type'}] },
+            { code: 'add', cat: 'editorial', label: 'Addition', desc: 'Inserted text.', attrs: [{name:'place', label:'Place'}] },
+            { code: 'sic', cat: 'editorial', label: 'Sic', desc: 'Incorrect text.', attrs: [] },
+            { code: 'persName', cat: 'semantic', label: 'Person', desc: 'Name of a person.', attrs: [{name:'ref', label:'ID'}, {name:'role', label:'Role'}] },
+            { code: 'placeName', cat: 'semantic', label: 'Place', desc: 'Name of a place.', attrs: [{name:'ref', label:'ID'}] },
+            { code: 'date', cat: 'semantic', label: 'Date', desc: 'Date.', attrs: [{name:'when', label:'ISO'}] }
+        ];
+
+        function selectCategory(cat) { 
+            document.getElementById('formAction').value = 'add'; 
+            document.getElementById('inp-category').value = cat; 
+            filterLibrary(); 
+            nextToStep(2); 
+        }
+
+        function filterLibrary() {
+            const cat = document.getElementById('inp-category').value;
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = TEI_LIBRARY.filter(i => i.cat === cat && (i.label.toLowerCase().includes(term) || i.code.includes(term)));
+            
+            document.getElementById('libraryList').innerHTML = filtered.map(i => {
+                const attrSafe = JSON.stringify(i.attrs).replace(/"/g, '&quot;');
+                return `
+                <div class="lib-option" onclick="selectDefinition('${i.code}', '${i.label}', '${i.desc}', ${attrSafe})">
+                    <div class="lib-main"><span style="font-weight:600;">${i.label}</span><span class="lib-desc">${i.desc}</span></div>
+                    <span class="lib-code">&lt;${i.code}&gt;</span>
+                </div>`;
+            }).join('');
+        }
+
+        function selectDefinition(code, label, desc, attrs) {
+            document.getElementById('inp-code').value=code; 
+            document.getElementById('inp-label').value=label;
+            document.getElementById('inp-desc').value=desc;
+            document.getElementById('inp-code').readOnly=true;
+            
+            document.getElementById('attr-tbody').innerHTML = '';
+            if(attrs && attrs.length) attrs.forEach(a => addAttrRow(a.name, a.label));
+            
+            nextToStep(3);
+        }
+
+        function selectCustom() {
+            document.getElementById('inp-code').value=''; 
+            document.getElementById('inp-code').readOnly=false;
+            document.getElementById('inp-label').value=''; 
+            document.getElementById('attr-tbody').innerHTML='';
+            nextToStep(3);
+        }
+    </script>
+</body>
+</html>

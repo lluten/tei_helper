@@ -1,0 +1,121 @@
+[
+  {
+    "code": "hi",
+    "label": "Highlight",
+    "category": "visual",
+    "color": "#fff176",
+    "description": "Visually distinct text.",
+    "attrs": [
+      {
+        "name": "rend",
+        "label": "Style",
+        "desc": "italic, bold, underline"
+      }
+    ]
+  },
+  {
+    "code": "add",
+    "label": "Addition",
+    "category": "editorial",
+    "color": "#b2dfdb",
+    "description": "Letters or words inserted in the text.",
+    "attrs": [
+      {
+        "name": "place",
+        "label": "Placement",
+        "desc": "margin, above, below"
+      }
+    ]
+  },
+  {
+    "code": "del",
+    "label": "Deletion",
+    "category": "editorial",
+    "color": "#ffcdd2",
+    "description": "Text deleted or crossed out in source.",
+    "attrs": [
+      {
+        "name": "rend",
+        "label": "Rendition",
+        "desc": "strikethrough, erased, etc."
+      }
+    ]
+  },
+  {
+    "code": "gap",
+    "label": "Gap",
+    "category": "editorial",
+    "color": "#f5f5f5",
+    "description": "Point where material is omitted/illegible.",
+    "attrs": [
+      {
+        "name": "reason",
+        "label": "Reason",
+        "desc": "damage, illegible"
+      }
+    ]
+  },
+  {
+    "code": "sic",
+    "label": "Sic (Error)",
+    "category": "editorial",
+    "color": "#ffe0b2",
+    "description": "Text reproduced although incorrect.",
+    "attrs": []
+  },
+  {
+    "code": "date",
+    "label": "Date",
+    "category": "semantic",
+    "color": "#fff9c4",
+    "description": "Contains a date in any format.",
+    "attrs": [
+      {
+        "name": "when",
+        "label": "ISO Date",
+        "desc": "YYYY-MM-DD format"
+      }
+    ]
+  },
+  {
+    "code": "persName",
+    "label": "Person",
+    "category": "semantic",
+    "color": "#b3e5fc",
+    "description": "Contains a proper noun or noun phrase referring to a person.",
+    "attrs": [
+      {
+        "name": "ref",
+        "label": "Ref ID",
+        "desc": "Pointer to authority file (URI)"
+      },
+      {
+        "name": "role",
+        "label": "Role",
+        "desc": "Role of person (e.g. witness)"
+      }
+    ]
+  },
+  {
+    "code": "placeName",
+    "label": "Place",
+    "category": "semantic",
+    "color": "#c8e6c9",
+    "description": "Contains an absolute or relative name for a place.",
+    "attrs": [
+      {
+        "name": "ref",
+        "label": "Geo ID",
+        "desc": "Pointer to gazetteer"
+      }
+    ]
+  },
+  {
+    "code": "lb",
+    "label": "Line Break",
+    "category": "structural",
+    "color": "#e0e0e0",
+    "description": "Marks the start of a new line.",
+    "attrs": []
+  }
+]

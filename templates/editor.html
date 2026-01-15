@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>TEI Annotator</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+        <svg viewBox="0 0 24 24">
+            <path
+                d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
+        </svg>
+    </button>
+
+    <div id="app-config" data-orig-width="{{ orig_width|default(0) }}" data-orig-height="{{ orig_height|default(0) }}"
+        data-tags='{{ tags | tojson | safe }}' style="display:none;">
+    </div>
+
+    <div id="floatingMenu" class="floating-menu" style="display:none;">
+
+        <div id="menuTabs" class="menu-tabs">
+            <button class="tab-btn active" onclick="switchTab('visual')">Appearance</button>
+            <button class="tab-btn" onclick="switchTab('editorial')">Editorial</button>
+            <button class="tab-btn" onclick="switchTab('semantic')">Semantic</button>
+        </div>
+
+        <div id="tagList" class="tag-options"></div>
+
+        <div id="attrForm" class="attr-form" style="display:none;">
+            <div class="attr-header"><span id="selectedTagLabel"></span>
+                <div class="help-text" id="selectedTagDesc"></div>
+            </div>
+            <div id="attrInputs"></div>
+            <div class="menu-actions">
+                <button onclick="confirmTag()" class="primary">Apply</button>
+                <button onclick="cancelAttr()" class="text-btn">Back</button>
+            </div>
+        </div>
+
+        <div id="editTagMenu" style="display:none; padding:15px; flex-direction:column; gap:10px;">
+            <div style="padding-bottom:10px; border-bottom:1px solid var(--border-color); margin-bottom:5px;">
+                <span
+                    style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Selected
+                    Tag</span>
+                <div id="activeTagName" style="font-weight:600; font-size:1.1rem; color:var(--text-color);"></div>
+            </div>
+            <button onclick="removeActiveTag()" class="btn-danger">
+                Remove Tag
+            </button>
+        </div>
+
+    </div>
+
+    <div class="main-layout">
+
+        <div class="panel left-panel" id="viewport">
+            <div class="zoom-layer" id="zoomLayer">
+                {% if img_url %}
+                <img src="{{ img_url }}" id="sourceImage" alt="Manuscript">
+                <svg id="overlaySVG" preserveAspectRatio="none"></svg>
+                {% else %}
+                <div
+                    style="color:white; opacity:0.6; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
+                    No Image Source Found
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel right-panel">
+            <div class="toolbar">
+                <span class="brand">TEI<span style="font-weight:400; opacity:0.6;">Wizard</span></span>
+                <div class="tools">
+                    <a href="{{ url_for('close_file') }}" class="btn-secondary"
+                        style="border-color:#d32f2f; color:#d32f2f;">
+                        &times; Close File
+                    </a>
+                    <div class="separator"></div>
+                    <a href="{{ url_for('doc_info') }}" class="btn-secondary">Doc</a>
+                    <a href="{{ url_for('tag_manager') }}" class="btn-secondary">Tags</a>
+                    <button onclick="saveDocument()" class="primary">Export XML</button>
+                </div>
+            </div>
+
+            <div class="editor-wrapper" id="editor" onmouseup="checkSelection()">
+                {% for line in lines %}
+                <div class="line-wrapper" data-points="{{ line.points }}" contenteditable="true"
+                    onmouseenter="highlightLine('{{ line.points }}')" onmouseleave="removeHighlight()">
+                    {% if line.html %}
+                    {{ line.html | safe }}
+                    {% else %}
+                    {{ line.text }}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <form id="exportForm" action="{{ url_for('export_tei') }}" method="POST" style="display:none;">
+        <input type="hidden" name="html_content" id="html_content">
+    </form>
+
+    <script>
+        // --- THEME ---
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+        if (localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+
+        // --- CONFIG ---
+        const configDiv = document.getElementById('app-config');
+        const tags = JSON.parse(configDiv.dataset.tags || "[]");
+        let ORIG_W = parseFloat(configDiv.dataset.origWidth) || 0;
+        let ORIG_H = parseFloat(configDiv.dataset.origHeight) || 0;
+
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = tags.map(t => `.tag-${t.code} { background-color: ${t.color}; }`).join("\n");
+        document.head.appendChild(styleSheet);
+
+        // --- MENU LOGIC ---
+        const menu = document.getElementById('floatingMenu');
+        const tagList = document.getElementById('tagList');
+        const attrForm = document.getElementById('attrForm');
+        const editMenu = document.getElementById('editTagMenu');
+        const menuTabs = document.getElementById('menuTabs');
+
+        let currentRange = null, pendingTag = null, activeTagElement = null;
+
+        // 1. Tag Creation Mode
+        function switchTab(cat) {
+            // UI Reset
+            editMenu.style.display = 'none';
+            menuTabs.style.display = 'flex';
+            tagList.style.display = 'block';
+            attrForm.style.display = 'none';
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[onclick="switchTab('${cat}')"]`).classList.add('active');
+
+            const filtered = tags.filter(t => t.category === cat);
+
+            if (filtered.length === 0) {
+                tagList.innerHTML = `<div style="padding:20px; text-align:center; font-size:0.8rem; color:var(--text-muted);">
+                    No tags in this category.<br><a href="/tags" style="color:var(--text-color);">Add in Config</a>
+                </div>`;
+            } else {
+                tagList.innerHTML = filtered.map(t =>
+                    `<button class="tag-option-btn" onclick="selectTag('${t.code}')">
+                        <div class="tag-row-main">
+                            <span class="tag-label">${t.label}</span>
+                        </div>
+                        <div class="tag-desc-tiny">${t.description || ''}</div>
+                    </button>`
+                ).join('');
+            }
+        }
+
+        function fillInput(id, val) {
+            const el = document.getElementById(id);
+            if (el) { el.value = val; el.focus(); }
+        }
+
+        function selectTag(code) {
+            pendingTag = tags.find(t => t.code === code);
+
+            if (pendingTag.attrs && pendingTag.attrs.length > 0) {
+                tagList.style.display = 'none';
+                attrForm.style.display = 'block';
+                document.getElementById('selectedTagLabel').textContent = pendingTag.label;
+                document.getElementById('selectedTagDesc').textContent = pendingTag.description || "";
+
+                // UPDATED: Now renders the attribute description inside the label
+                document.getElementById('attrInputs').innerHTML = pendingTag.attrs.map(attr => `
+                    <div class="attr-block">
+                        <label>
+                            <span>${attr.label}</span>
+                            ${attr.desc ? `<span class="attr-desc-tiny">${attr.desc}</span>` : ''}
+                        </label>
+                        <input type="text" id="attr-${attr.name}" placeholder="Value..." autocomplete="off">
+                        <div class="suggestion-chips">
+                            ${(attr.suggestions || []).map(s => `<span class="chip" onclick="fillInput('attr-${attr.name}','${s}')">${s}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+
+                setTimeout(() => {
+                    const firstInput = document.querySelector('#attrInputs input');
+                    if (firstInput) firstInput.focus();
+                }, 50);
+            } else {
+                applyTag({});
+            }
+        }
+
+        function confirmTag() {
+            const attrs = {};
+            pendingTag.attrs.forEach(attr => {
+                const el = document.getElementById(`attr-${attr.name}`);
+                if (el && el.value) attrs[attr.name] = el.value;
+            });
+            applyTag(attrs);
+        }
+
+        function cancelAttr() { attrForm.style.display = 'none'; tagList.style.display = 'block'; }
+
+        function applyTag(attrs) {
+            if (!pendingTag || !currentRange) return;
+            const span = document.createElement("span");
+            span.className = `tei-tag tag-${pendingTag.code}`;
+            span.setAttribute("data-tag", pendingTag.code);
+            span.title = pendingTag.description || pendingTag.label;
+
+            for (const [k, v] of Object.entries(attrs)) {
+                span.setAttribute(`data-attr-${k}`, v);
+            }
+
+            span.textContent = currentRange.toString();
+            currentRange.deleteContents();
+            currentRange.insertNode(span);
+            closeMenu(); window.getSelection().removeAllRanges();
+        }
+
+        // 2. Selection & Menu Position
+        function checkSelection() {
+            const sel = window.getSelection();
+            if (sel.isCollapsed || !sel.rangeCount) {
+                // Only close if we are NOT clicking inside the menu
+                setTimeout(() => {
+                    if (!document.activeElement.closest('#floatingMenu')) closeMenu();
+                }, 100);
+                return;
+            }
+
+            // Standard Creation Mode
+            currentRange = sel.getRangeAt(0);
+            showMenuAt(currentRange.getBoundingClientRect());
+            switchTab('visual'); // Default tab
+        }
+
+        // 3. EDIT EXISTING TAG LOGIC
+        document.getElementById('editor').addEventListener('click', function (e) {
+            if (e.target.classList.contains('tei-tag')) {
+                e.stopPropagation(); // Stop normal selection logic
+                activeTagElement = e.target;
+
+                // Switch to Edit Mode in Menu
+                menuTabs.style.display = 'none';
+                tagList.style.display = 'none';
+                attrForm.style.display = 'none';
+                editMenu.style.display = 'flex';
+
+                // Show Tag Info
+                const code = activeTagElement.getAttribute('data-tag');
+                const def = tags.find(t => t.code === code);
+                document.getElementById('activeTagName').textContent = def ? def.label : code;
+
+                showMenuAt(activeTagElement.getBoundingClientRect());
+            }
+        });
+
+        function removeActiveTag() {
+            if (!activeTagElement) return;
+
+            // Unwrap: Replace span with its text
+            const text = document.createTextNode(activeTagElement.textContent);
+            activeTagElement.parentNode.replaceChild(text, activeTagElement);
+
+            // Normalize to merge adjacent text nodes
+            document.getElementById('editor').normalize();
+
+            closeMenu();
+        }
+
+        function showMenuAt(rect) {
+            menu.style.display = 'flex';
+            let top = rect.bottom + window.scrollY + 10;
+            let left = rect.left;
+
+            if (left + 290 > window.innerWidth) left = window.innerWidth - 300;
+            if (top + 300 > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - 300;
+
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+        }
+
+        function closeMenu() {
+            menu.style.display = 'none';
+            pendingTag = null;
+            activeTagElement = null;
+        }
+
+        // --- ZOOM / IMAGE LOGIC ---
+        const viewport = document.getElementById('viewport');
+        const zoomLayer = document.getElementById('zoomLayer');
+        const img = document.getElementById('sourceImage');
+        const svg = document.getElementById('overlaySVG');
+
+        let scale = 1, pX = 0, pY = 0, isDragging = false, startX = 0, startY = 0;
+
+        function initImage() {
+            if (ORIG_W === 0 && img.naturalWidth > 0) ORIG_W = img.naturalWidth;
+            if (ORIG_H === 0 && img.naturalHeight > 0) ORIG_H = img.naturalHeight;
+
+            if (ORIG_W > 0 && ORIG_H > 0) {
+                svg.setAttribute('viewBox', `0 0 ${ORIG_W} ${ORIG_H}`);
+                scale = (viewport.clientWidth - 40) / ORIG_W;
+                pX = 20; pY = 20; updateTransform();
+            }
+        }
+
+        if (img) {
+            if (img.complete) initImage();
+            img.onload = initImage;
+        }
+
+        function updateTransform() { zoomLayer.style.transform = `translate(${pX}px, ${pY}px) scale(${scale})`; }
+
+        viewport.addEventListener('mousedown', e => { if (e.button !== 0) return; e.preventDefault(); isDragging = true; startX = e.clientX - pX; startY = e.clientY - pY; viewport.style.cursor = 'grabbing'; });
+        window.addEventListener('mousemove', e => { if (!isDragging) return; e.preventDefault(); pX = e.clientX - startX; pY = e.clientY - startY; updateTransform(); });
+        window.addEventListener('mouseup', () => { isDragging = false; viewport.style.cursor = 'grab'; });
+
+        viewport.addEventListener('wheel', e => {
+            e.preventDefault();
+            const d = e.deltaY > 0 ? -1 : 1;
+            let ns = scale + (d * 0.1 * scale);
+            if (ns < 0.05) ns = 0.05; if (ns > 20) ns = 20;
+
+            const r = viewport.getBoundingClientRect();
+            const mx = e.clientX - r.left;
+            const my = e.clientY - r.top;
+
+            const ix = (mx - pX) / scale;
+            const iy = (my - pY) / scale;
+
+            pX = mx - (ix * ns);
+            pY = my - (iy * ns);
+
+            scale = ns;
+            updateTransform();
+        }, { passive: false });
+
+        function highlightLine(pts) {
+            if (!pts) return;
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            p.setAttribute("points", pts);
+            p.style.fill = "rgba(255,215,0,0.35)";
+            p.setAttribute("vector-effect", "non-scaling-stroke");
+            p.style.stroke = "#ffae00";
+            p.style.strokeWidth = "2";
+            svg.innerHTML = ''; svg.appendChild(p);
+        }
+        function removeHighlight() { if (svg) svg.innerHTML = ''; }
+
+        function saveDocument() {
+            document.getElementById('html_content').value = document.getElementById('editor').innerHTML;
+            document.getElementById('exportForm').submit();
+        }
+    </script>
+</body>
+
+</html>

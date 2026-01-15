@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Metadata</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .section-title { font-size: 0.9rem; font-weight: 700; color: var(--accent-color); margin-top: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 15px; }
+        .form-actions { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 15px; }
+    </style>
+</head>
+<body>
+    <div class="landing-body">
+        <div class="upload-card" style="max-width: 800px; text-align: left;">
+            <span class="brand-lg" style="margin-top: 100px;">Document Information</span>
+            <p class="subtitle">Please provide the metadata for the TEI Header.</p>
+
+            <form action="{{ url_for('save_doc_info') }}" method="POST">
+                
+                <div class="section-title">1. File Description</div>
+                <div class="meta-grid">
+                    <div class="input-wrap">
+                        <label>Document Title</label>
+                        <input type="text" name="title" value="{{ meta.get('title', '') }}" placeholder="e.g. Letter to X" required>
+                    </div>
+                    <div class="input-wrap">
+                        <label>Author</label>
+                        <input type="text" name="author" value="{{ meta.get('author', '') }}" placeholder="e.g. John Doe">
+                    </div>
+                </div>
+                <div class="meta-grid">
+                    <div class="input-wrap">
+                        <label>Date</label>
+                        <input type="text" name="date" value="{{ meta.get('date', '') }}" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div class="input-wrap">
+                        <label>Transcribed By</label>
+                        <input type="text" name="transcriber" value="{{ meta.get('transcriber', '') }}" placeholder="Your Name">
+                    </div>
+                </div>
+
+                <div class="section-title">2. Source / Manuscript</div>
+                <div class="meta-grid">
+                    <div class="input-wrap">
+                        <label>Country</label>
+                        <input type="text" name="country" value="{{ meta.get('country', '') }}">
+                    </div>
+                    <div class="input-wrap">
+                        <label>Settlement (City)</label>
+                        <input type="text" name="settlement" value="{{ meta.get('settlement', '') }}">
+                    </div>
+                </div>
+                <div class="meta-grid">
+                    <div class="input-wrap">
+                        <label>Repository / Archive</label>
+                        <input type="text" name="repository" value="{{ meta.get('repository', '') }}">
+                    </div>
+                    <div class="input-wrap">
+                        <label>ID Number (Signatur)</label>
+                        <input type="text" name="idno" value="{{ meta.get('idno', '') }}">
+                    </div>
+                </div>
+
+                <div class="section-title">3. Physical Description</div>
+                <div class="meta-grid">
+                    <div class="input-wrap">
+                        <label>Material</label>
+                        <input type="text" name="material" value="{{ meta.get('material', '') }}" placeholder="e.g. Paper, Parchment">
+                    </div>
+                    <div class="input-wrap">
+                        <label>Object Type</label>
+                        <input type="text" name="objectType" value="{{ meta.get('objectType', '') }}" placeholder="e.g. Codex, Letter">
+                    </div>
+                </div>
+                <div class="meta-grid">
+                    <div class="input-wrap">
+                        <label>Script Type</label>
+                        <input type="text" name="handNote" value="{{ meta.get('handNote', '') }}" placeholder="e.g. Kurrent">
+                    </div>
+                    <div class="input-wrap">
+                        <label>Language</label>
+                        <input type="text" name="language" value="{{ meta.get('language', '') }}" placeholder="e.g. German">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{{ url_for('editor') }}" class="btn-secondary">Skip / Edit Later</a>
+                    <button type="submit" class="primary">Save & Continue to Editor &rarr;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
