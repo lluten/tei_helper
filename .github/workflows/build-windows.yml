@@ -13,8 +13,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install flask flaskwebgui pyinstaller lxml beautifulsoup4
-      - run: pyinstaller --onefile --windowed --add-data "templates;templates" --add-data "static;static" app.py
-      - uses: actions/upload-artifact@v4
+      - run: pyinstaller --onefile --windowed --hidden-import flaskwebgui --add-data "templates;templates" --add-data "static;static" app.py
         with:
           name: windows-exe
           path: dist/*.exe
