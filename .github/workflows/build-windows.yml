@@ -1,0 +1,20 @@
+name: build-windows
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install flask flaskwebgui pyinstaller
+      - run: pyinstaller --onefile --windowed --add-data "templates;templates" --add-data "static;static" app.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: dist/*.exe
