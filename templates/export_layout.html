@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TEI export layout</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .landing-body.layout-page { align-items: flex-start; padding: 16px 0; }
+        .layout-card { max-width: 900px; text-align: left; padding: 24px 32px; }
+        .layout-card .brand-lg { margin-top: 0; margin-bottom: 4px; font-size: 1.35rem; }
+        .layout-card .subtitle { margin-bottom: 12px; font-size: 0.9rem; color: var(--text-muted); }
+        .layout-card textarea { width: 100%; min-height: 320px; font-family: var(--font-mono); font-size: 0.8rem; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--input-bg); color: var(--text-color); resize: vertical; }
+        .layout-card .form-actions { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .layout-card .error { color: var(--danger-color); font-size: 0.9rem; margin-bottom: 12px; }
+    </style>
+</head>
+<body class="page-with-nav">
+    {% include '_app_nav.html' %}
+    <div class="landing-body layout-page">
+        <div class="upload-card layout-card">
+            <span class="brand-lg">TEI export layout</span>
+            <p class="subtitle">Edit the XML template used for exports. Use placeholders: {title}, {author}, {date}, {transcriber}, {country}, {settlement}, {repository}, {idno}, {material}, {objectType}, {handNote}, {language}. Keep an empty <code>&lt;div type="edition"&gt;</code> inside <code>&lt;text&gt;&lt;body&gt;</code> so the transcribed content can be inserted.</p>
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
+            <form action="{{ url_for('export_layout') }}" method="POST">
+                <textarea name="layout_content" id="layout_content" spellcheck="false">{{ layout_content }}</textarea>
+                <div class="form-actions">
+                    <div style="display: flex; gap: 12px; margin-left: auto;">
+                        <form action="{{ url_for('export_layout_reset') }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-secondary">Reset to default</button>
+                        </form>
+                        <button type="submit" class="primary">Save layout</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,6 +1,7 @@
 # Web deployment
 flask>=3.0
 flask-session>=0.5
+flask-limiter>=3.5
 lxml>=5.0
 beautifulsoup4>=4.12
 gunicorn>=21.0

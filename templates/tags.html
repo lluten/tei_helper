@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tag Definition Wizard</title>
+    <title>Tag Definitions</title>
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        .wizard-body h2 { font-size: 1.1rem; margin: 0 0 6px 0; }
+        .wizard-body .desc { font-size: 0.85rem; margin-bottom: 10px; color: var(--text-muted); }
         .attr-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
         .attr-table th { text-align: left; color: var(--text-muted); font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
         .attr-table td { padding: 8px 0; border-bottom: 1px solid var(--border-color); }
@@ -15,23 +17,17 @@
         .btn-small:hover { background: var(--border-color); }
     </style>
 </head>
-<body>
-
-    <button class="theme-toggle" onclick="toggleTheme()">
-        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
-    </button>
-
+<body class="page-with-nav">
+    {% include '_app_nav.html' %}
+    <div class="page-main">
     <div id="tags-data" data-tags='{{ tags|tojson|safe }}' style="display:none;"></div>
-
     <div class="wizard-container">
-        
         <div class="creator-card">
             <div class="wizard-header">
-                <button class="nav-arrow" id="btn-prev" onclick="prevStep()" disabled title="Back">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
+                <button type="button" class="wizard-step-back" id="btn-prev" onclick="prevStep()" disabled>Previous step</button>
                 <div class="step-title" id="step-title">Step 1: Select Category</div>
-                <div style="width:32px;"></div> </div>
+                <div class="wizard-step-placeholder"></div>
+            </div>
 
             <form method="POST" id="mainForm" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
                 <input type="hidden" name="action" id="formAction" value="add">
@@ -106,29 +102,13 @@
         </div>
 
         <div class="library-card">
-            <h3 style="margin-top:0;">Your Definitions</h3>
-            <div style="flex:1; overflow-y:auto;" id="currentTagsList"></div>
-            
-            <div class="return-btn-wrapper">
-                <a href="/" class="btn-secondary" style="width:100%;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="15 18 9 12 15 6"></polyline></svg> 
-                    Return to Editor
-                </a>
-            </div>
+            <h3 class="library-card-title">Your Definitions</h3>
+            <div class="library-list-scroll" id="currentTagsList"></div>
         </div>
+    </div>
     </div>
 
     <script>
-        // --- THEME ---
-        function toggleTheme() {
-            const body = document.body;
-            const current = body.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            body.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-        }
-        if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-
         // --- GLOBAL CLICK FOR DROPDOWNS ---
         window.onclick = function(event) {
             if (!event.target.closest('.kebab-container')) {

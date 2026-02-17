@@ -1,7 +1,7 @@
 [
   {
     "code": "hi",
-    "label": "Highlight",
+    "label": "Highlight3",
     "category": "visual",
     "color": "#fff176",
     "description": "Visually distinct text.",
@@ -9,7 +9,8 @@
       {
         "name": "rend",
         "label": "Style",
-        "desc": "italic, bold, underline"
+        "desc": "italic, bold, underline",
+        "suggestions": []
       }
     ]
   },

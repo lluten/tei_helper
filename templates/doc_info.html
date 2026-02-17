@@ -6,19 +6,26 @@
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .section-title { font-size: 0.9rem; font-weight: 700; color: var(--accent-color); margin-top: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 15px; }
-        .form-actions { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 15px; }
+        .landing-body.doc-info-page { align-items: flex-start; padding: 16px 0; }
+        .doc-info-card { max-width: 900px; text-align: left; padding: 24px 32px; }
+        .doc-info-card .brand-lg { margin-top: 0; margin-bottom: 4px; font-size: 1.35rem; }
+        .doc-info-card .subtitle { margin-bottom: 16px; font-size: 0.9rem; }
+        .doc-info-card .section-title { font-size: 0.8rem; font-weight: 700; color: var(--accent-color); margin-top: 14px; margin-bottom: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+        .doc-info-card .section-title:first-of-type { margin-top: 0; }
+        .doc-info-card .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 14px; margin-top: 8px; }
+        .doc-info-card .input-wrap label { margin-bottom: 3px; font-size: 0.7rem; }
+        .doc-info-card .input-wrap input { padding: 6px 8px; font-size: 0.9rem; }
+        .doc-info-card .form-actions { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; }
     </style>
 </head>
-<body>
-    <div class="landing-body">
-        <div class="upload-card" style="max-width: 800px; text-align: left;">
-            <span class="brand-lg" style="margin-top: 100px;">Document Information</span>
+<body class="page-with-nav">
+    {% include '_app_nav.html' %}
+    <div class="landing-body doc-info-page">
+        <div class="upload-card doc-info-card">
+            <span class="brand-lg">Document Information</span>
             <p class="subtitle">Please provide the metadata for the TEI Header.</p>
 
             <form action="{{ url_for('save_doc_info') }}" method="POST">
-                
                 <div class="section-title">1. File Description</div>
                 <div class="meta-grid">
                     <div class="input-wrap">
@@ -29,8 +36,6 @@
                         <label>Author</label>
                         <input type="text" name="author" value="{{ meta.get('author', '') }}" placeholder="e.g. John Doe">
                     </div>
-                </div>
-                <div class="meta-grid">
                     <div class="input-wrap">
                         <label>Date</label>
                         <input type="text" name="date" value="{{ meta.get('date', '') }}" placeholder="YYYY-MM-DD">
@@ -51,8 +56,6 @@
                         <label>Settlement (City)</label>
                         <input type="text" name="settlement" value="{{ meta.get('settlement', '') }}">
                     </div>
-                </div>
-                <div class="meta-grid">
                     <div class="input-wrap">
                         <label>Repository / Archive</label>
                         <input type="text" name="repository" value="{{ meta.get('repository', '') }}">
@@ -73,8 +76,6 @@
                         <label>Object Type</label>
                         <input type="text" name="objectType" value="{{ meta.get('objectType', '') }}" placeholder="e.g. Codex, Letter">
                     </div>
-                </div>
-                <div class="meta-grid">
                     <div class="input-wrap">
                         <label>Script Type</label>
                         <input type="text" name="handNote" value="{{ meta.get('handNote', '') }}" placeholder="e.g. Kurrent">

@@ -1,0 +1,16 @@
+# Example Caddy config for TEI-edit. Caddy obtains TLS automatically.
+# Replace YOUR_DOMAIN. Run gunicorn on 127.0.0.1:5000.
+
+YOUR_DOMAIN {
+    # Request body limit (Caddy 2: request_body 50m if needed; or rely on app MAX_CONTENT_LENGTH)
+    reverse_proxy 127.0.0.1:5000 {
+        transport http {
+            read_timeout 60s
+            write_timeout 60s
+        }
+    }
+    header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    header X-Content-Type-Options "nosniff"
+    header X-Frame-Options "DENY"
+    header Referrer-Policy "strict-origin-when-cross-origin"
+}

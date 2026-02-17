@@ -6,6 +6,10 @@ from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 from flask import Flask, render_template, request, Response, redirect, url_for, session, send_from_directory
 from markupsafe import Markup, escape
+from werkzeug.exceptions import RequestEntityTooLarge
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_session import Session
 from lxml import etree
 from bs4 import BeautifulSoup
@@ -13,7 +17,13 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 # --- CONFIGURATION (env for web deployment) ---
-app.secret_key = os.environ.get('SECRET_KEY') or os.environ.get('FLASK_SECRET_KEY') or 'tei_secret_key_dev_only'
+_dev_secret = 'tei_secret_key_dev_only'
+_secret = os.environ.get('SECRET_KEY') or os.environ.get('FLASK_SECRET_KEY') or _dev_secret
+if os.environ.get('TEI_HELPER_WEB') and (_secret == _dev_secret or len(_secret) < 32):
+    raise RuntimeError(
+        'Production requires SECRET_KEY (and TEI_HELPER_WEB=1): set a strong random SECRET_KEY of at least 32 characters.'
+    )
+app.secret_key = _secret
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads'))
 TAGS_FILE = os.environ.get('TAGS_FILE', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tags.json'))
 TEI_LAYOUT_FILE = os.environ.get('TEI_LAYOUT_FILE', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tei_layout_template.xml'))
@@ -26,6 +36,35 @@ app.config['SESSION_FILE_DIR'] = os.environ.get('SESSION_FILE_DIR') or os.path.j
 )
 os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
 Session(app)
+
+# Request body limit (DoS mitigation); 50 MB
+_max_content = os.environ.get('MAX_CONTENT_LENGTH_MB', '50')
+app.config['MAX_CONTENT_LENGTH'] = int(_max_content) * 1024 * 1024
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_413(e):
+    return (
+        'Request too large. Maximum upload size is {} MB.'.format(_max_content),
+        413,
+        {'Content-Type': 'text/plain; charset=utf-8'},
+    )
+
+
+# Rate limiting (DoS mitigation). Default 60/min; upload routes stricter.
+_rate_default = os.environ.get('RATELIMIT_DEFAULT', '60 per minute')
+_rate_upload = os.environ.get('RATELIMIT_UPLOAD', '15 per minute')
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[_rate_default],
+    default_limits_per_method=True,
+    storage_uri=os.environ.get('RATELIMIT_STORAGE_URI', 'memory://'),
+)
+limiter.init_app(app)
+
+# When behind a reverse proxy (nginx/Caddy), trust X-Forwarded-* so rate limiting uses real client IP
+if os.environ.get('TEI_HELPER_WEB'):
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 DEFAULT_TAGS = []
 
@@ -313,6 +352,7 @@ def send_upload(filename):
 
 
 @app.route('/', methods=['GET', 'POST'])
+@limiter.limit(_rate_upload, methods=['POST'])
 def index():
     if request.method == 'POST':
         import_type = request.form.get('import_type', 'transkribus')
@@ -550,6 +590,7 @@ def switch_page():
 
 
 @app.route('/editor/change_image', methods=['POST'])
+@limiter.limit(_rate_upload)
 def change_image():
     """Replace the image for the current page with an uploaded image file."""
     pages = session.get('pages')
@@ -610,6 +651,7 @@ def reorder_pages():
 
 
 @app.route('/editor/add_pages', methods=['POST'])
+@limiter.limit(_rate_upload)
 def add_pages():
     """Append new page(s) from uploaded file(s). Saves current page HTML first."""
     pages = session.get('pages')
@@ -727,6 +769,33 @@ def close_file():
     session.pop('pages', None)
     session.pop('current_page_index', None)
     return redirect(url_for('index'))
+
+
+@app.route('/privacy')
+def privacy():
+    """Privacy and terms of use page (legal)."""
+    import base64
+    operator = os.environ.get('PRIVACY_OPERATOR', 'This service')
+    contact = os.environ.get('PRIVACY_CONTACT_EMAIL', '').strip()
+    retention = os.environ.get('PRIVACY_RETENTION', '24 hours')
+    # Pass contact in encoded form so the full address never appears in HTML (reduces scraping)
+    contact_encoded = ''
+    if contact and '@' in contact:
+        try:
+            local, _, domain = contact.rpartition('@')
+            contact_encoded = base64.b64encode(
+                (local + '\0' + domain).encode('utf-8')
+            ).decode('ascii')
+        except Exception:
+            contact_encoded = ''
+    return render_template(
+        'privacy.html',
+        operator=operator,
+        contact_email=contact,  # used only for "if contact" checks
+        contact_encoded=contact_encoded,
+        retention=retention,
+    )
+
 
 @app.route('/tags', methods=['GET', 'POST'])
 def tag_manager():
@@ -888,10 +957,8 @@ def export_tei():
                     headers={"Content-disposition": f"attachment; filename={filename}"})
 
 if __name__ == '__main__':
-    # Web deployment: TEI_HELPER_WEB=1 or run via gunicorn (gunicorn -w 4 -b 0.0.0.0:8000 'app:app')
-    if os.environ.get('TEI_HELPER_WEB'):
-        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG', '0') == '1')
-    else:
-        from flaskwebgui import FlaskUI
-        ui = FlaskUI(app=app, server="flask")
-        ui.run()
+    # Web: TEI_HELPER_WEB=1 for production binding, or run via gunicorn (gunicorn -w 4 -b 0.0.0.0:8000 'app:app')
+    host = '0.0.0.0' if os.environ.get('TEI_HELPER_WEB') else '127.0.0.1'
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(host=host, port=port, debug=debug)

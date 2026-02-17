@@ -14,6 +14,7 @@
             <span class="brand-lg">TEI-edit</span>
         </div>
         <p class="subtitle">Upload documents to start annotating. Choose import type and one or more files (order = page order).</p>
+        <p class="subtitle" style="margin-bottom: 12px;">By using this service you agree to our <a href="{{ url_for('privacy') }}">Privacy &amp; terms</a>.</p>
 
         <form action="{{ url_for('index') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">
