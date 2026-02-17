@@ -3,23 +3,17 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>TEI Annotator</title>
+    <title>TEI-edit</title>
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
-
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
-        <svg viewBox="0 0 24 24">
-            <path
-                d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
-        </svg>
-    </button>
-
+<body class="editor-page">
+    {% include '_app_nav.html' %}
     <div id="app-config" data-orig-width="{{ orig_width|default(0) }}" data-orig-height="{{ orig_height|default(0) }}"
-        data-tags='{{ tags | tojson | safe }}' style="display:none;">
+        data-tags='{{ tags | tojson | safe }}' data-current-page-index="{{ current_page_index|default(0) }}"
+        data-highlight-gram="{{ highlight_gram or '' }}" style="display:none;">
     </div>
 
     <div id="floatingMenu" class="floating-menu" style="display:none;">
@@ -28,6 +22,7 @@
             <button class="tab-btn active" onclick="switchTab('visual')">Appearance</button>
             <button class="tab-btn" onclick="switchTab('editorial')">Editorial</button>
             <button class="tab-btn" onclick="switchTab('semantic')">Semantic</button>
+            <button class="tab-btn" onclick="switchTab('ligature')">Ligature</button>
         </div>
 
         <div id="tagList" class="tag-options"></div>
@@ -56,39 +51,86 @@
         </div>
 
     </div>
-
+    <div class="editor-main">
     <div class="main-layout">
 
         <div class="panel left-panel" id="viewport">
+            <div class="page-info-bar" id="pageInfoBar">
+                <div class="page-info-minimal" onclick="togglePageInfo()" title="Show more info">
+                    <span class="page-info-label" id="pageInfoLabel">
+                        {% if total_pages and total_pages > 1 %}Page {{ current_page_index + 1 }} of {{ total_pages }} · {% endif %}{% if page_name %}{{ page_name }}{% else %}Page{% endif %}{% if orig_width and orig_height %} · {{ orig_width }}×{{ orig_height }}{% endif %}
+                    </span>
+                    <svg class="page-info-chevron" id="pageInfoChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="page-info-detail" id="pageInfoDetail">
+                    {% if total_pages and total_pages > 1 %}
+                    <div class="page-info-row"><span class="page-info-key">Current</span><span class="page-info-val">{{ current_page_index + 1 }} of {{ total_pages }}</span></div>
+                    {% endif %}
+                    <div class="page-info-row"><span class="page-info-key">File</span><span class="page-info-val" id="pageInfoFile">{{ page_name|default('—', true) }}</span></div>
+                    <div class="page-info-row"><span class="page-info-key">Dimensions</span><span class="page-info-val">{% if orig_width and orig_height %}{{ orig_width }} × {{ orig_height }}{% else %}—{% endif %}</span></div>
+                    <div class="page-info-row"><span class="page-info-key">Lines</span><span class="page-info-val">{{ line_count|default(0) }}</span></div>
+                    {% if image_src %}
+                    <div class="page-info-row page-info-url"><span class="page-info-key">Image</span><span class="page-info-val" title="{{ image_src }}">{{ image_src[:50] }}{% if image_src|length > 50 %}…{% endif %}</span></div>
+                    {% endif %}
+                    {% if pages_summary and pages_summary|length > 1 %}
+                    <div class="page-info-all-pages">
+                        <span class="page-info-key">All pages</span>
+                        <ul class="page-info-pages-list">
+                            {% for p in pages_summary %}
+                            <li><span class="page-info-page-num">{{ loop.index }}.</span> {{ p.label }}{% if p.line_count is defined %} ({{ p.line_count }} line{{ 's' if p.line_count != 1 else '' }}){% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
             <div class="zoom-layer" id="zoomLayer">
                 {% if img_url %}
                 <img src="{{ img_url }}" id="sourceImage" alt="Manuscript">
                 <svg id="overlaySVG" preserveAspectRatio="none"></svg>
                 {% else %}
-                <div
-                    style="color:white; opacity:0.6; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
+                <div id="noImagePlaceholder" class="no-image-placeholder">
                     No Image Source Found
                 </div>
                 {% endif %}
             </div>
+            <div class="image-page-controls">
+                {% if total_pages and total_pages > 1 %}
+                <form method="post" action="{{ url_for('switch_page') }}" id="switch-page-form" class="image-page-controls-form">
+                    <input type="hidden" name="html_content" id="switch-page-html">
+                    <input type="hidden" name="target_page_index" id="switch-page-target">
+                    <input type="hidden" name="highlight_gram" id="switch-page-highlight">
+                    <input type="hidden" name="keep_ligatures" id="switch-page-keep-ligatures">
+                    <button type="button" class="image-page-btn" id="btn-prev-page" onclick="goToPage({{ current_page_index }} - 1)" {% if current_page_index <= 0 %}disabled{% endif %} title="Previous page">‹</button>
+                    <span class="image-page-label">Page <span id="current-page-num">{{ current_page_index + 1 }}</span>/{{ total_pages }}</span>
+                    <button type="button" class="image-page-btn" id="btn-next-page" onclick="goToPage({{ current_page_index }} + 1)" {% if current_page_index >= total_pages - 1 %}disabled{% endif %} title="Next page">›</button>
+                </form>
+                {% endif %}
+                <button type="button" class="image-page-btn image-page-btn-more" id="btn-change-image" onclick="document.getElementById('change-image-input').click();" title="Change image source">⋯</button>
+            </div>
+            <form id="change-image-form" action="{{ url_for('change_image') }}" method="POST" enctype="multipart/form-data" style="display:none;">
+                <input type="hidden" name="current_page_index" value="{{ current_page_index | default(0) }}">
+                <input type="file" name="image" id="change-image-input" accept="image/*">
+            </form>
         </div>
 
         <div class="panel right-panel">
-            <div class="toolbar">
-                <span class="brand">TEI<span style="font-weight:400; opacity:0.6;">Wizard</span></span>
-                <div class="tools">
-                    <a href="{{ url_for('close_file') }}" class="btn-secondary"
-                        style="border-color:#d32f2f; color:#d32f2f;">
-                        &times; Close File
-                    </a>
-                    <div class="separator"></div>
-                    <a href="{{ url_for('doc_info') }}" class="btn-secondary">Doc</a>
-                    <a href="{{ url_for('tag_manager') }}" class="btn-secondary">Tags</a>
-                    <button onclick="saveDocument()" class="primary">Export XML</button>
-                </div>
+            <form method="post" action="{{ url_for('switch_page') }}" id="go-to-page-form" style="display:none;">
+                <input type="hidden" name="html_content" id="go-to-page-html">
+                <input type="hidden" name="target_page_index" id="go-to-page-target">
+                <input type="hidden" name="highlight_gram" id="go-to-page-highlight">
+                <input type="hidden" name="keep_ligatures" id="go-to-page-keep-ligatures">
+            </form>
+            <div class="editor-and-ligature">
+            {% if import_type == 'image' %}
+            <div class="editor-toolbar">
+                <button type="button" class="btn-small" id="btn-add-line" onclick="addEditorLine()">Add line</button>
             </div>
-
+            {% endif %}
             <div class="editor-wrapper" id="editor" onmouseup="checkSelection()">
+                {% if initial_html %}
+                {{ initial_html | safe }}
+                {% else %}
                 {% for line in lines %}
                 <div class="line-wrapper" data-points="{{ line.points }}" contenteditable="true"
                     onmouseenter="highlightLine('{{ line.points }}')" onmouseleave="removeHighlight()">
@@ -99,30 +141,231 @@
                     {% endif %}
                 </div>
                 {% endfor %}
+                {% endif %}
+            </div>
+            <div id="ligaturePanel" class="ligature-panel">
+                <div class="ligature-panel-header">
+                    <div class="ligature-panel-header-top">
+                        <h3 class="ligature-panel-title">Ligatures</h3>
+                        <button type="button" class="ligature-panel-close" onclick="toggleLigaturePanel()">&times;</button>
+                    </div>
+                    <button type="button" class="ligature-export-trigger btn-small" onclick="openExportPreview()">Export</button>
+                </div>
+                <div class="ligature-panel-controls">
+                    <label>N-gram size</label>
+                    <select id="ligatureN" onchange="runLigatureAnalysisThenApply()">
+                        <option value="2">2-grams</option>
+                        <option value="3">3-grams</option>
+                        <option value="2,3">2- and 3-grams</option>
+                    </select>
+                    <label>Min count</label>
+                    <input type="number" id="ligatureMinCount" value="2" min="1" style="width:60px;" onchange="renderLigatureTable()">
+                    <span class="ligature-sort-label">Sort:</span>
+                    <div class="ligature-sort-btns" role="group">
+                        <button type="button" class="ligature-sort-btn active" data-sort="frequency">Frequency</button>
+                        <button type="button" class="ligature-sort-btn" data-sort="likelihood">Likelihood</button>
+                        <button type="button" class="ligature-sort-btn" data-sort="gram">A–Z</button>
+                    </div>
+                </div>
+                <div class="ligature-panel-actions">
+                    <button type="button" class="btn-small" onclick="clearLigatureHighlights()">Clear browse highlights</button>
+                    {% if total_pages and total_pages > 1 %}
+                    <button type="button" class="btn-small" id="btn-analyse-all-pages" onclick="runLigatureAnalysisAllPages()">Analyse all pages</button>
+                    {% endif %}
+                </div>
+                <div class="ligature-stats" id="ligatureStats"></div>
+                <div class="ligature-table-wrap">
+                    <table class="ligature-table" id="ligatureTable">
+                        <thead><tr><th>N-gram</th><th>Count</th><th>Freq %</th><th>Likelihood</th><th>Pages</th></tr></thead>
+                        <tbody id="ligatureTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="ligatureExportModal" class="ligature-export-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="ligatureExportModalTitle">
+                <div class="ligature-export-modal-backdrop" onclick="closeExportPreview()"></div>
+                <div class="ligature-export-modal-box">
+                    <h3 id="ligatureExportModalTitle" class="ligature-export-modal-title">Export marked ligatures</h3>
+                    <div id="ligatureExportModalStats" class="ligature-export-modal-stats"></div>
+                    <div class="ligature-export-modal-actions">
+                        <button type="button" class="btn-small primary" id="ligatureExportModalConfirm">Download</button>
+                        <button type="button" class="btn-small" onclick="closeExportPreview()">Cancel</button>
+                    </div>
+                </div>
+            </div>
             </div>
         </div>
     </div>
+    </div>
+
+    {% if total_pages %}
+    <div id="managePagesModal" class="reorder-pages-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="managePagesModalTitle">
+        <div class="reorder-pages-modal-backdrop" onclick="closeManagePagesModal()"></div>
+        <div class="reorder-pages-modal-box manage-pages-modal-box">
+            <button type="button" class="manage-pages-close-x" onclick="closeManagePagesModal()" aria-label="Close">×</button>
+            <h3 id="managePagesModalTitle" class="reorder-pages-modal-title">Manage pages</h3>
+            <p class="reorder-pages-modal-hint">Drag to reorder. Click × to remove a page.</p>
+            <ul id="reorderPagesList" class="reorder-pages-list"></ul>
+            <form id="reorderPagesForm" action="{{ url_for('reorder_pages') }}" method="POST" style="display:none;">
+                <input type="hidden" name="order" id="reorderPagesOrderInput">
+            </form>
+            <form id="managePagesAddForm" action="{{ url_for('add_pages') }}" method="POST" enctype="multipart/form-data" style="display:none;">
+                <input type="hidden" name="html_content" id="managePagesAddHtml">
+                <input type="file" name="file" id="managePagesAddInput" multiple accept=".xml,image/*">
+            </form>
+            <form id="managePagesRemoveForm" action="{{ url_for('remove_pages') }}" method="POST" style="display:none;">
+                <input type="hidden" name="html_content" id="managePagesRemoveHtml">
+                <input type="hidden" name="indices" id="managePagesRemoveIndices">
+            </form>
+            <div class="reorder-pages-modal-actions">
+                <button type="button" class="btn-small primary" onclick="applyReorderPages()">Apply order</button>
+                <button type="button" class="btn-small" onclick="document.getElementById('managePagesAddInput').click();">Add pages</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <form id="exportForm" action="{{ url_for('export_tei') }}" method="POST" style="display:none;">
         <input type="hidden" name="html_content" id="html_content">
+        <input type="hidden" name="export_format" id="export_format" value="positional">
+        <input type="hidden" name="current_page_index" id="export_current_page_index" value="{{ current_page_index | default(0) }}">
     </form>
 
     <script>
-        // --- THEME ---
-        function toggleTheme() {
-            const body = document.body;
-            const current = body.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            body.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-        }
-        if (localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-
+        const pageLabels = {{ page_labels | default([]) | tojson }};
+    </script>
+    <script>
         // --- CONFIG ---
         const configDiv = document.getElementById('app-config');
         const tags = JSON.parse(configDiv.dataset.tags || "[]");
         let ORIG_W = parseFloat(configDiv.dataset.origWidth) || 0;
         let ORIG_H = parseFloat(configDiv.dataset.origHeight) || 0;
+        const currentPageIndex = parseInt(configDiv.dataset.currentPageIndex || '0', 10);
+
+        function goToPage(targetIndex) {
+            const total = {{ total_pages | default(1) }};
+            if (targetIndex < 0 || targetIndex >= total) return;
+            const form = document.getElementById('switch-page-form');
+            if (!form) return;
+            document.getElementById('switch-page-html').value = document.getElementById('editor').innerHTML;
+            document.getElementById('switch-page-target').value = targetIndex;
+            const panel = document.getElementById('ligaturePanel');
+            document.getElementById('switch-page-keep-ligatures').value = (panel && panel.classList.contains('is-open')) ? '1' : '';
+            form.submit();
+        }
+
+        function goToPageAndHighlight(pageIndex, gram) {
+            const form = document.getElementById('go-to-page-form');
+            if (!form) return;
+            document.getElementById('go-to-page-html').value = document.getElementById('editor').innerHTML;
+            document.getElementById('go-to-page-target').value = pageIndex;
+            document.getElementById('go-to-page-highlight').value = gram || '';
+            const panel = document.getElementById('ligaturePanel');
+            document.getElementById('go-to-page-keep-ligatures').value = (panel && panel.classList.contains('is-open')) ? '1' : '';
+            form.submit();
+        }
+
+        function openManagePagesModal() {
+            const total = {{ total_pages | default(1) }};
+            let order = Array.from({ length: total }, (_, i) => i);
+            const listEl = document.getElementById('reorderPagesList');
+            if (!listEl) return;
+            let draggedPos = null;
+            function render() {
+                listEl.innerHTML = order.map((pageIdx, pos) => {
+                    const label = (pageLabels && pageLabels[pageIdx]) ? pageLabels[pageIdx] : ('Page ' + (pageIdx + 1));
+                    return '<li class="reorder-pages-item" data-pos="' + pos + '" data-page-idx="' + pageIdx + '" draggable="true">' +
+                        '<span class="reorder-pages-drag-handle" aria-hidden="true">⋮⋮</span>' +
+                        '<span class="reorder-pages-label">' + (pos + 1) + '. ' + escapeHtml(label) + '</span>' +
+                        '<button type="button" class="reorder-pages-remove-x" data-page-idx="' + pageIdx + '" title="Remove page" aria-label="Remove page">×</button></li>';
+                }).join('');
+                listEl.querySelectorAll('.reorder-pages-remove-x').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const pageIdx = parseInt(this.dataset.pageIdx, 10);
+                        const label = (pageLabels && pageLabels[pageIdx]) ? pageLabels[pageIdx] : ('Page ' + (pageIdx + 1));
+                        if (!confirm("Remove page \"" + label + "\"? This cannot be undone.")) return;
+                        document.getElementById('managePagesRemoveHtml').value = document.getElementById('editor').innerHTML;
+                        document.getElementById('managePagesRemoveIndices').value = String(pageIdx);
+                        document.getElementById('managePagesRemoveForm').submit();
+                    });
+                });
+                listEl.querySelectorAll('.reorder-pages-item').forEach(li => {
+                    li.addEventListener('dragstart', function(e) {
+                        if (e.target.classList.contains('reorder-pages-remove-x')) return;
+                        draggedPos = parseInt(this.dataset.pos, 10);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', draggedPos);
+                        this.classList.add('reorder-dragging');
+                    });
+                    li.addEventListener('dragend', function() { this.classList.remove('reorder-dragging'); draggedPos = null; });
+                    li.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        const pos = parseInt(this.dataset.pos, 10);
+                        if (draggedPos !== null && draggedPos !== pos) this.classList.add('reorder-drag-over');
+                    });
+                    li.addEventListener('dragleave', function() { this.classList.remove('reorder-drag-over'); });
+                    li.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        this.classList.remove('reorder-drag-over');
+                        const dropPos = parseInt(this.dataset.pos, 10);
+                        if (draggedPos === null || draggedPos === dropPos) return;
+                        const order = window._reorderPagesOrder;
+                        const v = order[draggedPos];
+                        order.splice(draggedPos, 1);
+                        order.splice(dropPos, 0, v);
+                        window._reorderPagesRender();
+                    });
+                });
+            }
+            window._reorderPagesOrder = order;
+            window._reorderPagesRender = render;
+            render();
+            document.getElementById('managePagesModal').style.display = 'flex';
+        }
+        function closeManagePagesModal() {
+            document.getElementById('managePagesModal').style.display = 'none';
+        }
+        function applyReorderPages() {
+            if (!window._reorderPagesOrder) return;
+            document.getElementById('reorderPagesOrderInput').value = window._reorderPagesOrder.join(',');
+            document.getElementById('reorderPagesForm').submit();
+        }
+        (function setupManagePagesAdd() {
+            const form = document.getElementById('managePagesAddForm');
+            const input = document.getElementById('managePagesAddInput');
+            if (!form || !input) return;
+            input.addEventListener('change', function() {
+                if (input.files && input.files.length) {
+                    document.getElementById('managePagesAddHtml').value = document.getElementById('editor').innerHTML;
+                    form.submit();
+                }
+            });
+        })();
+
+        function addEditorLine() {
+            const editor = document.getElementById('editor');
+            if (!editor) return;
+            const div = document.createElement('div');
+            div.className = 'line-wrapper';
+            div.setAttribute('data-points', '');
+            div.setAttribute('contenteditable', 'true');
+            div.setAttribute('onmouseenter', 'highlightLine(\'\')');
+            div.setAttribute('onmouseleave', 'removeHighlight()');
+            div.appendChild(document.createElement('br'));
+            editor.appendChild(div);
+        }
+
+        (function setupChangeImage() {
+            const form = document.getElementById('change-image-form');
+            const input = document.getElementById('change-image-input');
+            if (!form || !input) return;
+            const noImg = document.getElementById('noImagePlaceholder');
+            if (noImg) noImg.addEventListener('click', function() { input.value = ''; input.click(); });
+            input.addEventListener('change', function() {
+                if (input.files && input.files.length) form.submit();
+            });
+        })();
 
         const styleSheet = document.createElement("style");
         styleSheet.innerText = tags.map(t => `.tag-${t.code} { background-color: ${t.color}; }`).join("\n");
@@ -135,7 +378,7 @@
         const editMenu = document.getElementById('editTagMenu');
         const menuTabs = document.getElementById('menuTabs');
 
-        let currentRange = null, pendingTag = null, activeTagElement = null;
+        let currentRange = null, pendingTag = null, activeTagElement = null, activeLigatureElement = null;
 
         // 1. Tag Creation Mode
         function switchTab(cat) {
@@ -146,7 +389,25 @@
             attrForm.style.display = 'none';
 
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`button[onclick="switchTab('${cat}')"]`).classList.add('active');
+            const tabBtn = document.querySelector(`button[onclick="switchTab('${cat}')"]`);
+            if (tabBtn) tabBtn.classList.add('active');
+
+            if (cat === 'ligature') {
+                const sel = window.getSelection();
+                let isMark = false;
+                if (sel.rangeCount) {
+                    const node = sel.anchorNode;
+                    const span = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('.ligature-mark');
+                    isMark = !!span;
+                }
+                if (activeLigatureElement) {
+                    isMark = activeLigatureElement.classList.contains('ligature-mark');
+                }
+                tagList.innerHTML = isMark
+                    ? '<button class="tag-option-btn" onclick="removeLigatureMark()"><div class="tag-row-main"><span class="tag-label">Remove ligature mark</span></div></button>'
+                    : '<button class="tag-option-btn" onclick="applyLigatureMark()"><div class="tag-row-main"><span class="tag-label">Mark as ligature</span></div></button>';
+                return;
+            }
 
             const filtered = tags.filter(t => t.category === cat);
 
@@ -164,6 +425,31 @@
                     </button>`
                 ).join('');
             }
+        }
+
+        function applyLigatureMark() {
+            if (!currentRange) return;
+            const span = document.createElement('span');
+            span.className = 'ligature-mark';
+            span.setAttribute('data-ngram', currentRange.toString());
+            span.textContent = currentRange.toString();
+            currentRange.deleteContents();
+            currentRange.insertNode(span);
+            closeMenu();
+            window.getSelection().removeAllRanges();
+        }
+
+        function removeLigatureMark() {
+            const span = activeLigatureElement || (currentRange && (() => {
+                const node = currentRange.startContainer;
+                return (node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('.ligature-mark');
+            })());
+            if (!span) return;
+            const text = document.createTextNode(span.textContent);
+            span.parentNode.replaceChild(text, span);
+            document.getElementById('editor').normalize();
+            closeMenu();
+            window.getSelection().removeAllRanges();
         }
 
         function fillInput(id, val) {
@@ -235,9 +521,12 @@
         function checkSelection() {
             const sel = window.getSelection();
             if (sel.isCollapsed || !sel.rangeCount) {
-                // Only close if we are NOT clicking inside the menu
                 setTimeout(() => {
-                    if (!document.activeElement.closest('#floatingMenu')) closeMenu();
+                    if (document.activeElement.closest('#floatingMenu')) return;
+                    const node = sel.anchorNode;
+                    const inLigature = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('.ligature-highlight, .ligature-mark');
+                    if (inLigature) return;
+                    closeMenu();
                 }, 100);
                 return;
             }
@@ -248,11 +537,12 @@
             switchTab('visual'); // Default tab
         }
 
-        // 3. EDIT EXISTING TAG LOGIC
+        // 3. EDIT EXISTING TAG LOGIC + LIGATURE CLICK
         document.getElementById('editor').addEventListener('click', function (e) {
             if (e.target.classList.contains('tei-tag')) {
                 e.stopPropagation(); // Stop normal selection logic
                 activeTagElement = e.target;
+                activeLigatureElement = null;
 
                 // Switch to Edit Mode in Menu
                 menuTabs.style.display = 'none';
@@ -266,6 +556,28 @@
                 document.getElementById('activeTagName').textContent = def ? def.label : code;
 
                 showMenuAt(activeTagElement.getBoundingClientRect());
+                return;
+            }
+            const ligatureSpan = e.target.closest('.ligature-highlight, .ligature-mark');
+            if (ligatureSpan) {
+                e.preventDefault();
+                e.stopPropagation();
+                activeLigatureElement = ligatureSpan;
+                activeTagElement = null;
+                currentRange = document.createRange();
+                currentRange.selectNodeContents(ligatureSpan);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(currentRange);
+                menuTabs.style.display = 'flex';
+                tagList.style.display = 'block';
+                attrForm.style.display = 'none';
+                editMenu.style.display = 'none';
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                const lb = document.querySelector('button[onclick="switchTab(\'ligature\')"]');
+                if (lb) lb.classList.add('active');
+                switchTab('ligature');
+                showMenuAt(ligatureSpan.getBoundingClientRect());
             }
         });
 
@@ -284,12 +596,14 @@
 
         function showMenuAt(rect) {
             menu.style.display = 'flex';
-            let top = rect.bottom + window.scrollY + 10;
+            const menuH = 300;
+            const menuW = 340;
+            let top = rect.bottom + 10;
             let left = rect.left;
-
-            if (left + 290 > window.innerWidth) left = window.innerWidth - 300;
-            if (top + 300 > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - 300;
-
+            if (left + menuW > window.innerWidth) left = window.innerWidth - menuW;
+            if (left < 0) left = 0;
+            if (top + menuH > window.innerHeight) top = rect.top - menuH - 4;
+            if (top < 0) top = 8;
             menu.style.top = `${top}px`;
             menu.style.left = `${left}px`;
         }
@@ -298,6 +612,7 @@
             menu.style.display = 'none';
             pendingTag = null;
             activeTagElement = null;
+            activeLigatureElement = null;
         }
 
         // --- ZOOM / IMAGE LOGIC ---
@@ -362,9 +677,489 @@
         }
         function removeHighlight() { if (svg) svg.innerHTML = ''; }
 
-        function saveDocument() {
+        function doExport(format) {
+            document.getElementById('export_format').value = format;
             document.getElementById('html_content').value = document.getElementById('editor').innerHTML;
             document.getElementById('exportForm').submit();
+        }
+        function togglePageInfo() {
+            const bar = document.getElementById('pageInfoBar');
+            const chevron = document.getElementById('pageInfoChevron');
+            if (bar) bar.classList.toggle('is-expanded');
+            if (chevron) chevron.style.transform = bar.classList.contains('is-expanded') ? 'rotate(180deg)' : '';
+        }
+
+        // --- LIGATURE (N-GRAM) ANALYSIS ---
+        const CONTEXT_CHARS = 5;
+        const HIGHLIGHTED_NGRAMS_KEY = 'tei_helper_highlighted_ngrams';
+        function getHighlightedNgramsSet() {
+            try {
+                const raw = localStorage.getItem(HIGHLIGHTED_NGRAMS_KEY);
+                return raw ? new Set(JSON.parse(raw)) : new Set();
+            } catch (e) { return new Set(); }
+        }
+        function setHighlightedNgramsSet(set) {
+            try {
+                localStorage.setItem(HIGHLIGHTED_NGRAMS_KEY, JSON.stringify(Array.from(set)));
+            } catch (e) {}
+        }
+        let highlightedNgramsSet = getHighlightedNgramsSet();
+        let ligatureData = { ngrams: {}, total2: 0, total3: 0, lines: [], lineSegments: [], allPagesMode: false };
+
+        function getLineTexts() {
+            const editor = document.getElementById('editor');
+            const lines = [];
+            const lineSegments = [];
+            editor.querySelectorAll('.line-wrapper').forEach(lineEl => {
+                let text = '';
+                const segments = [];
+                let globalStart = 0;
+                const walker = document.createTreeWalker(lineEl, NodeFilter.SHOW_TEXT, null, false);
+                let n;
+                while ((n = walker.nextNode())) {
+                    const len = n.textContent.length;
+                    if (len > 0) {
+                        text += n.textContent;
+                        segments.push({ node: n, start: 0, len: len, globalStart: globalStart });
+                        globalStart += len;
+                    }
+                }
+                lines.push(text);
+                lineSegments.push(segments);
+            });
+            return { lines, lineSegments };
+        }
+
+        function computeNgrams(lines, nSizes) {
+            const ngrams = {};
+            let total2 = 0, total3 = 0;
+            const ctx = CONTEXT_CHARS;
+            nSizes.forEach(n => {
+                lines.forEach((line, lineIndex) => {
+                    for (let i = 0; i <= line.length - n; i++) {
+                        const gram = line.slice(i, i + n);
+                        if (/\s/.test(gram)) continue;
+                        const left = Math.max(0, i - ctx);
+                        const right = Math.min(line.length, i + n + ctx);
+                        const context = line.slice(left, right);
+                        if (!ngrams[gram]) ngrams[gram] = { count: 0, positions: [] };
+                        ngrams[gram].count++;
+                        ngrams[gram].positions.push({ lineIndex, offset: i, context });
+                        if (n === 2) total2++; else total3++;
+                    }
+                });
+            });
+            const totalGrams = total2 + total3;
+            Object.keys(ngrams).forEach(gram => {
+                ngrams[gram].frequency = totalGrams > 0 ? (ngrams[gram].count / totalGrams) * 100 : 0;
+            });
+            const charCount = {};
+            let totalChars = 0;
+            lines.forEach(line => {
+                for (const c of line) {
+                    if (/\s/.test(c)) continue;
+                    charCount[c] = (charCount[c] || 0) + 1;
+                    totalChars++;
+                }
+            });
+            Object.keys(ngrams).forEach(gram => {
+                const expected = totalChars > 0 ? gram.split('').reduce((p, c) => p * ((charCount[c] || 0) / totalChars), 1) : 0;
+                const observed = totalGrams > 0 ? ngrams[gram].count / totalGrams : 0;
+                ngrams[gram].likelihood = (expected > 0 && observed > 0) ? (observed / expected) : 0;
+            });
+            return { ngrams, total2, total3 };
+        }
+
+        function runLigatureAnalysis() {
+            ligatureData.allPagesMode = false;
+            const { lines, lineSegments } = getLineTexts();
+            const nVal = document.getElementById('ligatureN').value;
+            const nSizes = nVal === '2,3' ? [2, 3] : [parseInt(nVal, 10)];
+            const { ngrams, total2, total3 } = computeNgrams(lines, nSizes);
+            ligatureData = { ngrams, total2, total3, lines, lineSegments, allPagesMode: false };
+            renderLigatureTable();
+            const statsEl = document.getElementById('ligatureStats');
+            statsEl.textContent = `2-grams: ${total2} total | 3-grams: ${total3} total | ${Object.keys(ngrams).length} unique`;
+        }
+
+        function applyStoredHighlights() {
+            highlightedNgramsSet.forEach(gram => {
+                if (ligatureData.ngrams[gram]) highlightNgram(gram);
+            });
+            updateLigatureTableRowStates();
+        }
+
+        function runLigatureAnalysisThenApply() {
+            const total = {{ total_pages | default(1) }};
+            if (total > 1) {
+                runLigatureAnalysisAllPages().then(applyStoredHighlights);
+            } else {
+                runLigatureAnalysis();
+                applyStoredHighlights();
+            }
+        }
+
+        async function runLigatureAnalysisAllPages() {
+            const nVal = document.getElementById('ligatureN').value;
+            const nSizes = nVal === '2,3' ? [2, 3] : [parseInt(nVal, 10)];
+            const editor = document.getElementById('editor');
+            const payload = {
+                html_content: editor.innerHTML,
+                current_page_index: currentPageIndex
+            };
+            const resp = await fetch('{{ url_for("api_ligature_lines") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) return;
+            const { linesByPage } = await resp.json();
+            const allLines = [];
+            const pageIndexByGlobalLine = [];
+            const localLineIndexByGlobalLine = [];
+            linesByPage.forEach((lines, pi) => {
+                lines.forEach((t, li) => {
+                    allLines.push(t);
+                    pageIndexByGlobalLine.push(pi);
+                    localLineIndexByGlobalLine.push(li);
+                });
+            });
+            const { ngrams, total2, total3 } = computeNgrams(allLines, nSizes);
+            Object.keys(ngrams).forEach(gram => {
+                ngrams[gram].positions.forEach((pos, i) => {
+                    pos.pageIndex = pageIndexByGlobalLine[pos.lineIndex];
+                    pos.localLineIndex = localLineIndexByGlobalLine[pos.lineIndex];
+                });
+            });
+            const { lines: currentLines, lineSegments } = getLineTexts();
+            ligatureData = {
+                ngrams, total2, total3, lines: currentLines, lineSegments,
+                allPagesMode: true,
+                currentPageIndex,
+                pageIndexByGlobalLine,
+                localLineIndexByGlobalLine
+            };
+            renderLigatureTable();
+            const statsEl = document.getElementById('ligatureStats');
+            statsEl.textContent = `All pages: 2-grams ${total2} | 3-grams ${total3} | ${Object.keys(ngrams).length} unique (highlight: current page only)`;
+        }
+
+        function renderLigatureTable() {
+            const minCount = parseInt(document.getElementById('ligatureMinCount').value, 10) || 1;
+            const sortBtn = document.querySelector('.ligature-sort-btn.active');
+            const sortBy = sortBtn ? sortBtn.dataset.sort : 'frequency';
+            let list = Object.entries(ligatureData.ngrams || {})
+                .filter(([, d]) => d.count >= minCount)
+                .map(([gram, d]) => ({ gram, ...d }));
+            if (sortBy === 'frequency') list.sort((a, b) => b.frequency - a.frequency);
+            else if (sortBy === 'likelihood') list.sort((a, b) => (b.likelihood || 0) - (a.likelihood || 0));
+            else list.sort((a, b) => a.gram.localeCompare(b.gram));
+            const tbody = document.getElementById('ligatureTableBody');
+            const allPages = ligatureData.allPagesMode;
+            tbody.innerHTML = list.map(({ gram, count, frequency, likelihood }) => {
+                let pagesCell = '';
+                if (allPages && ligatureData.ngrams[gram] && ligatureData.ngrams[gram].positions) {
+                    const pageSet = new Set(ligatureData.ngrams[gram].positions.map(p => p.pageIndex));
+                    const pages = Array.from(pageSet).sort((a, b) => a - b);
+                    pagesCell = '<td class="ligature-pages-cell">' + pages.map(pi => '<a href="#" class="go-to-page-link" data-gram="' + escapeHtml(gram).replace(/"/g, '&quot;') + '" data-page-index="' + pi + '">' + (pi + 1) + '</a>').join(', ') + '</td>';
+                } else {
+                    pagesCell = '<td></td>';
+                }
+                return `<tr data-gram="${escapeHtml(gram).replace(/"/g, '&quot;')}"><td><code>${escapeHtml(gram)}</code></td><td>${count}</td><td>${frequency.toFixed(2)}%</td><td>${(likelihood != null ? likelihood.toFixed(2) : '—')}</td>${pagesCell}</tr>`;
+            }).join('');
+            tbody.querySelectorAll('.go-to-page-link').forEach(a => {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    goToPageAndHighlight(parseInt(this.dataset.pageIndex, 10), this.dataset.gram);
+                });
+            });
+            tbody.querySelectorAll('tr').forEach(tr => {
+                tr.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+                    const gram = this.dataset.gram;
+                    if (highlightedNgramsSet.has(gram)) clearNgramHighlight(gram);
+                    else highlightNgram(gram);
+                });
+            });
+            updateLigatureTableRowStates();
+        }
+
+        document.querySelectorAll('.ligature-sort-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.ligature-sort-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                renderLigatureTable();
+            });
+        });
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function getSegmentsForRun(lineIndex, offset, n) {
+            const segments = ligatureData.lineSegments[lineIndex];
+            if (!segments) return [];
+            const runEnd = offset + n;
+            const result = [];
+            for (const seg of segments) {
+                const segEnd = seg.globalStart + seg.len;
+                if (segEnd <= offset) continue;
+                if (seg.globalStart >= runEnd) break;
+                const oStart = Math.max(0, offset - seg.globalStart);
+                const oEnd = Math.min(seg.len, runEnd - seg.globalStart);
+                result.push({ node: seg.node, startInNode: oStart, len: oEnd - oStart });
+            }
+            return result;
+        }
+
+        function wrapSegmentInSpan(node, startInNode, len, gram) {
+            const text = node.textContent;
+            const before = text.substring(0, startInNode);
+            const middle = text.substring(startInNode, startInNode + len);
+            const after = text.substring(startInNode + len);
+            const parent = node.parentNode;
+            const span = document.createElement('span');
+            span.className = 'ligature-highlight';
+            span.setAttribute('data-ngram', gram);
+            span.textContent = middle;
+            const frag = document.createDocumentFragment();
+            if (before) frag.appendChild(document.createTextNode(before));
+            frag.appendChild(span);
+            if (after) frag.appendChild(document.createTextNode(after));
+            parent.replaceChild(frag, node);
+        }
+
+        function highlightNgram(gram) {
+            const n = gram.length;
+            let toHighlight;
+            if (ligatureData.allPagesMode) {
+                const { lines, lineSegments } = getLineTexts();
+                ligatureData.lines = lines;
+                ligatureData.lineSegments = lineSegments;
+                const { ngrams: currentNgrams } = computeNgrams(lines, [n]);
+                const positions = currentNgrams[gram]?.positions;
+                if (!positions || !positions.length) return;
+                toHighlight = positions.map(p => ({ lineIndex: p.lineIndex, offset: p.offset }));
+            } else {
+                const positions = ligatureData.ngrams[gram]?.positions;
+                if (!positions || !ligatureData.lineSegments.length) return;
+                toHighlight = positions.map(p => ({ lineIndex: p.lineIndex, offset: p.offset }));
+            }
+            highlightedNgramsSet.add(gram);
+            setHighlightedNgramsSet(highlightedNgramsSet);
+            toHighlight.forEach(({ lineIndex, offset }) => {
+                const segs = getSegmentsForRunWith(lineIndex, offset, n, ligatureData.lineSegments);
+                segs.forEach(seg => {
+                    if (seg.node.parentElement.closest('.ligature-highlight') || seg.node.parentElement.closest('.ligature-mark')) return;
+                    wrapSegmentInSpan(seg.node, seg.startInNode, seg.len, gram);
+                });
+                const fresh = getLineTexts();
+                ligatureData.lines = fresh.lines;
+                ligatureData.lineSegments = fresh.lineSegments;
+            });
+            updateLigatureTableRowStates();
+        }
+
+        function getSegmentsForRunWith(lineIndex, offset, n, lineSegments) {
+            const segments = lineSegments[lineIndex];
+            if (!segments) return [];
+            const runEnd = offset + n;
+            const result = [];
+            for (const seg of segments) {
+                const segEnd = seg.globalStart + seg.len;
+                if (segEnd <= offset) continue;
+                if (seg.globalStart >= runEnd) break;
+                const oStart = Math.max(0, offset - seg.globalStart);
+                const oEnd = Math.min(seg.len, runEnd - seg.globalStart);
+                result.push({ node: seg.node, startInNode: oStart, len: oEnd - oStart });
+            }
+            return result;
+        }
+
+        function unwrapLigatureHighlight(span) {
+            const parent = span.parentNode;
+            while (span.firstChild) parent.insertBefore(span.firstChild, span);
+            parent.removeChild(span);
+        }
+
+        function clearLigatureHighlights() {
+            highlightedNgramsSet.clear();
+            setHighlightedNgramsSet(highlightedNgramsSet);
+            document.querySelectorAll('#editor .ligature-highlight').forEach(span => {
+                unwrapLigatureHighlight(span);
+            });
+            document.getElementById('editor').normalize();
+            runLigatureAnalysisThenApply();
+            updateLigatureTableRowStates();
+        }
+
+        function isNgramHighlighted(gram) {
+            return document.querySelector('#editor .ligature-highlight[data-ngram="' + gram.replace(/"/g, '\\"') + '"]') !== null;
+        }
+
+        function clearNgramHighlight(gram) {
+            highlightedNgramsSet.delete(gram);
+            setHighlightedNgramsSet(highlightedNgramsSet);
+            document.querySelectorAll('#editor .ligature-highlight[data-ngram="' + gram.replace(/"/g, '\\"') + '"]').forEach(span => {
+                unwrapLigatureHighlight(span);
+            });
+            document.getElementById('editor').normalize();
+            const fresh = getLineTexts();
+            ligatureData.lines = fresh.lines;
+            ligatureData.lineSegments = fresh.lineSegments;
+            const { ngrams, total2, total3 } = computeNgrams(ligatureData.lines, [2, 3]);
+            ligatureData.ngrams = ngrams;
+            ligatureData.total2 = total2;
+            ligatureData.total3 = total3;
+            updateLigatureTableRowStates();
+        }
+
+        function updateLigatureTableRowStates() {
+            document.querySelectorAll('#ligatureTableBody tr[data-gram]').forEach(tr => {
+                const gram = tr.dataset.gram;
+                tr.classList.toggle('is-highlighted', highlightedNgramsSet.has(gram));
+            });
+        }
+
+        function getMarkedLigatures() {
+            const editor = document.getElementById('editor');
+            const lineWrappers = editor.querySelectorAll('.line-wrapper');
+            const positions = [];
+            const ctx = CONTEXT_CHARS;
+            lineWrappers.forEach((lineEl, lineIndex) => {
+                let lineText = '';
+                const tw = document.createTreeWalker(lineEl, NodeFilter.SHOW_TEXT, null, false);
+                let tn;
+                while ((tn = tw.nextNode())) lineText += tn.textContent;
+                let offset = 0;
+                const seenSpans = new Set();
+                const walker = document.createTreeWalker(lineEl, NodeFilter.SHOW_TEXT, null, false);
+                let n;
+                while ((n = walker.nextNode())) {
+                    const len = n.textContent.length;
+                    const span = n.parentElement.closest('.ligature-mark');
+                    if (span && span.contains(n) && !seenSpans.has(span)) {
+                        seenSpans.add(span);
+                        const gram = span.getAttribute('data-ngram') || span.textContent;
+                        const text = span.textContent;
+                        const spanStart = offset;
+                        const spanLen = span.textContent.length;
+                        const left = Math.max(0, spanStart - ctx);
+                        const right = Math.min(lineText.length, spanStart + spanLen + ctx);
+                        positions.push({
+                            gram, text, lineIndex, offset: spanStart, context: lineText.slice(left, right), fullLine: lineText, page_index: currentPageIndex
+                        });
+                    }
+                    offset += len;
+                }
+            });
+            const byGram = {};
+            positions.forEach(p => {
+                if (!byGram[p.gram]) byGram[p.gram] = { count: 0, positions: [] };
+                byGram[p.gram].count++;
+                byGram[p.gram].positions.push({
+                    lineIndex: p.lineIndex, offset: p.offset, context: p.context, text: p.text, fullLine: p.fullLine, page_index: p.page_index
+                });
+            });
+            const total = positions.length;
+            Object.keys(byGram).forEach(gram => {
+                byGram[gram].frequency = total > 0 ? (byGram[gram].count / total) * 100 : 0;
+            });
+            return { byGram, total, positions };
+        }
+
+        function openExportPreview() {
+            const { byGram, total } = getMarkedLigatures();
+            const unique = Object.keys(byGram).length;
+            const statsEl = document.getElementById('ligatureExportModalStats');
+            statsEl.innerHTML = '<p><strong>Total marked ligatures:</strong> ' + total + '</p><p><strong>Unique n-grams:</strong> ' + unique + '</p><p>CSV with all info: ngram, text, line_index, offset, context, full_line, occurrence_index, total_for_gram, frequency_pct, exported_at.</p>' + (total === 0 ? '<p class="ligature-export-empty">No marked ligatures. Mark some spans via the Ligature menu before exporting.</p>' : '');
+            document.getElementById('ligatureExportModal').style.display = 'flex';
+            const btn = document.getElementById('ligatureExportModalConfirm');
+            btn.disabled = total === 0;
+            btn.onclick = function() {
+                if (total > 0) exportLigatureDB();
+                closeExportPreview();
+            };
+        }
+
+        function closeExportPreview() {
+            document.getElementById('ligatureExportModal').style.display = 'none';
+        }
+
+        function exportLigatureDB() {
+            const { byGram, total } = getMarkedLigatures();
+            const list = Object.entries(byGram).map(([gram, d]) => ({
+                gram, count: d.count, frequency: d.frequency, positions: d.positions
+            }));
+            const header = 'ngram,text,page_index,line_index,offset_in_line,context,full_line,occurrence_index,total_for_gram,frequency_pct,exported_at';
+            const exportedAt = new Date().toISOString();
+            const rows = [];
+            list.forEach(({ gram, count, frequency, positions: posList }) => {
+                posList.forEach((p, idx) => {
+                    rows.push([
+                        escapeCsv(gram),
+                        escapeCsv((p.text !== undefined ? p.text : gram)),
+                        (p.page_index !== undefined ? p.page_index : currentPageIndex),
+                        p.lineIndex,
+                        p.offset,
+                        escapeCsv(p.context),
+                        escapeCsv((p.fullLine !== undefined ? p.fullLine : '')),
+                        idx + 1,
+                        count,
+                        frequency.toFixed(4),
+                        exportedAt
+                    ].join(','));
+                });
+            });
+            const stats = [
+                '# Ligature export – one row per marked occurrence',
+                '# total_occurrences,' + total,
+                '# unique_ngrams,' + list.length,
+                '# Columns: ngram, text, page_index, line_index, offset_in_line, context, full_line, occurrence_index (1-based within ngram), total_for_gram, frequency_pct, exported_at',
+                ''
+            ];
+            const csv = stats.join('\n') + header + '\n' + rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ligature-export.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function escapeCsv(s) {
+            if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+            return s;
+        }
+
+        function toggleLigaturePanel() {
+            const panel = document.getElementById('ligaturePanel');
+            const isOpen = panel.classList.toggle('is-open');
+            if (isOpen) {
+                runLigatureAnalysisThenApply();
+            } else {
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.documentElement.style.overflow = '';
+                const editor = document.getElementById('editor');
+                if (editor) editor.focus({ preventScroll: true });
+            }
+        }
+
+        if (window.location.search.indexOf('ligatures') !== -1) {
+            document.addEventListener('DOMContentLoaded', () => { toggleLigaturePanel(); });
+        }
+        if (configDiv.dataset.highlightGram) {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    const gram = configDiv.dataset.highlightGram;
+                    highlightedNgramsSet.add(gram);
+                    setHighlightedNgramsSet(highlightedNgramsSet);
+                    runLigatureAnalysisThenApply();
+                }, 150);
+            });
         }
     </script>
 </body>
