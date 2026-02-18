@@ -1,0 +1,80 @@
+# Build desktop executables for Windows, macOS, and Linux when you push a version tag.
+# Push a tag (e.g. v1.0.0) to trigger; the workflow creates a release and attaches the builds.
+name: Build desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: TEI-edit-Windows.exe
+            dist_path: dist/TEI-edit.exe
+            upload_name: windows
+          - os: macos-latest
+            artifact: TEI-edit-macOS
+            dist_path: dist/TEI-edit
+            upload_name: macos
+          - os: ubuntu-latest
+            artifact: TEI-edit-Linux
+            dist_path: dist/TEI-edit
+            upload_name: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller app.spec
+
+      - name: Rename artifact for release
+        run: mv "${{ matrix.dist_path }}" "dist/${{ matrix.artifact }}"
+        shell: bash
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.upload_name }}
+          path: dist/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*'
+          path: release
+          merge-multiple: true
+
+      - name: Create release and attach builds
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: |
+            release/dist/TEI-edit-Windows.exe
+            release/dist/TEI-edit-macOS
+            release/dist/TEI-edit-Linux
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

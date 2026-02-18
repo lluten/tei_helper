@@ -1,11 +1,9 @@
-# Web deployment and local run
+# Desktop app
 flask>=3.0
 flask-session>=0.5
 flask-limiter>=3.5
 lxml>=5.0
 beautifulsoup4>=4.12
-gunicorn>=21.0
 Pillow>=10.0
-# Local desktop window (optional; only needed for "python app.py" without TEI_HELPER_WEB)
 flaskwebgui>=1.0
 pywebview>=4.0

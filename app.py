@@ -9,21 +9,15 @@ from markupsafe import Markup, escape
 from werkzeug.exceptions import RequestEntityTooLarge
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_session import Session
 from lxml import etree
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# --- CONFIGURATION (env for web deployment) ---
+# --- CONFIGURATION ---
 _dev_secret = 'tei_secret_key_dev_only'
-_secret = os.environ.get('SECRET_KEY') or os.environ.get('FLASK_SECRET_KEY') or _dev_secret
-if os.environ.get('TEI_HELPER_WEB') and (_secret == _dev_secret or len(_secret) < 32):
-    raise RuntimeError(
-        'Production requires SECRET_KEY (and TEI_HELPER_WEB=1): set a strong random SECRET_KEY of at least 32 characters.'
-    )
-app.secret_key = _secret
+app.secret_key = os.environ.get('SECRET_KEY') or os.environ.get('FLASK_SECRET_KEY') or _dev_secret
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads'))
 TAGS_FILE = os.environ.get('TAGS_FILE', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tags.json'))
 TEI_LAYOUT_FILE = os.environ.get('TEI_LAYOUT_FILE', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tei_layout_template.xml'))
@@ -61,10 +55,6 @@ limiter = Limiter(
     storage_uri=os.environ.get('RATELIMIT_STORAGE_URI', 'memory://'),
 )
 limiter.init_app(app)
-
-# When behind a reverse proxy (nginx/Caddy), trust X-Forwarded-* so rate limiting uses real client IP
-if os.environ.get('TEI_HELPER_WEB'):
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 DEFAULT_TAGS = []
 
@@ -959,8 +949,5 @@ def export_tei():
                     headers={"Content-disposition": f"attachment; filename={filename}"})
 
 if __name__ == '__main__':
-    # Web: TEI_HELPER_WEB=1 for production binding, or run via gunicorn (gunicorn -w 4 -b 0.0.0.0:8000 'app:app')
-    host = '0.0.0.0' if os.environ.get('TEI_HELPER_WEB') else '127.0.0.1'
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
-    app.run(host=host, port=port, debug=debug)
+    import flaskwebgui
+    flaskwebgui.FlaskUI(app=app, server="flask").run()

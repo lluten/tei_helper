@@ -1,24 +1,58 @@
 # TEI-edit
 
-Web app for editing and annotating TEI/PageXML documents (e.g. from Transkribus).
+Desktop app for TEI annotation: link images, transcribe text, and export TEI XML.
 
-## Deploy on PythonAnywhere
+## For users
 
-1. Clone this repo (or upload the project) to your PythonAnywhere account.
-2. Create a virtualenv, install dependencies: `pip install -r requirements.txt` and `pip install python-dotenv`.
-3. Create a `.env` file in the project root with `TEI_HELPER_WEB=1`, `SECRET_KEY` (strong, ≥32 chars), and optionally `PRIVACY_CONTACT_EMAIL`, `PRIVACY_OPERATOR`. See `.env.example`.
-4. In the Web tab: Manual configuration, set virtualenv, edit the WSGI file to load `.env` and `from app import app as application`. Reload.
+### Download
 
-Full step-by-step: **[docs/DEPLOY_PYTHONANYWHERE.md](docs/DEPLOY_PYTHONANYWHERE.md)**.
+1. Open the **Releases** page of this repository (on GitHub: repo → **Releases**).
+2. Download the file for your system:
+   - **Windows:** `TEI-edit-Windows.exe`
+   - **macOS:** `TEI-edit-macOS` (if macOS blocks it: **System Preferences → Security & Privacy → Open Anyway**, or right‑click → Open)
+   - **Linux:** `TEI-edit-Linux`
+3. Run the file. A window opens; no browser or install needed.
 
-## Local run (development)
+### Using the app
+
+- **New project:** paste image URLs or upload images, then start transcribing and adding TEI markup.
+- **Export:** use the export option to save your work as TEI XML.
+- Data is stored next to the app (e.g. `uploads/`, `flask_session/`). You can delete those folders to clear local data.
+
+---
+
+## For developers / building from source
+
+### Run locally (no build)
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
-# No TEI_HELPER_WEB or SECRET_KEY needed for local; app runs in desktop mode
 python app.py
 ```
 
-Opens a local window (FlaskWebGUI). For web mode locally, set `TEI_HELPER_WEB=1` and `SECRET_KEY` in the environment and run `python app.py` or use a WSGI server.
+### Build executables
+
+**Option A — Let GitHub build when you push a tag**
+
+1. Commit and push your code.
+2. Create and push a version tag:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. The **Build desktop** workflow runs and builds Windows, macOS, and Linux binaries, then creates a release and attaches them. Check the **Actions** tab, then the new release under **Releases**.
+
+**Option B — Build on your machine**
+
+On the OS you want to target (or a VM):
+
+```bash
+pip install -r requirements.txt
+pip install pyinstaller
+pyinstaller app.spec
+```
+
+- Windows → `dist/TEI-edit.exe`
+- macOS / Linux → `dist/TEI-edit`
+
+More detail: [docs/DESKTOP_BUILD_AND_DISTRIBUTE.md](docs/DESKTOP_BUILD_AND_DISTRIBUTE.md).
