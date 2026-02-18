@@ -22,6 +22,9 @@ build/
 *.swp
 *.swo
 
+# Fly.io
+.fly/
+
 # OS
 .DS_Store
 Thumbs.db

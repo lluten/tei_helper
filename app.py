@@ -241,15 +241,17 @@ def _safe_layout_display(xml_str):
 # --- PAGE HELPERS (multi-page session model) ---
 
 def build_page_from_pagexml(filepath):
-    """Build a page dict from a Transkribus PageXML file."""
+    """Build a page dict from a Transkribus PageXML file. Image is not fetched from Transkribus
+    (e.g. blocked on PythonAnywhere); user must upload the page image via the editor's ⋯ button."""
     tree = etree.parse(filepath)
     img_url = ""
     raw_img_url = ""
     meta = tree.xpath('//*[local-name()="TranskribusMetadata"]')
     if meta:
         raw_img_url = meta[0].get('imgUrl') or ""
+        # Do not fetch remote image (fails on PA free tier). User uploads image via "Change image" (⋯) in editor.
         if raw_img_url and (raw_img_url.startswith('http://') or raw_img_url.startswith('https://')):
-            img_url = url_for('proxy_image', url=raw_img_url, _external=False)
+            img_url = ""
         else:
             img_url = raw_img_url or ""
     orig_w, orig_h = 0, 0

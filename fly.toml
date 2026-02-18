@@ -1,0 +1,23 @@
+# Fly.io app config. Set secrets with: fly secrets set SECRET_KEY=your-key
+# Optionally: fly secrets set PRIVACY_CONTACT_EMAIL=you@example.com
+
+app = "tei-edit"
+
+[build]
+
+[env]
+  PORT = "8080"
+  TEI_HELPER_WEB = "1"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1

@@ -2,9 +2,28 @@
 
 Step-by-step for deploying TEI-edit on PythonAnywhere and connecting a domain you’ve already bought.
 
-**Quick summary:** Get code onto PA → create virtualenv, `pip install -r requirements.txt` + `python-dotenv` → create `.env` with `TEI_HELPER_WEB=1` and `SECRET_KEY` → Web tab: Manual config, set virtualenv, edit WSGI to load `.env` and `from app import app as application` → Reload. Then (paid) add domain: CNAME `www` → value from Web tab, enable HTTPS.
+**Quick summary:** Get code onto PA (upload a zip of the `tei-helper` folder — no git/SSH needed) → create virtualenv, `pip install -r requirements.txt` + `python-dotenv` → create `.env` with `TEI_HELPER_WEB=1` and `SECRET_KEY` → Web tab: Manual config, set virtualenv, edit WSGI to load `.env` and `from app import app as application` → Reload. Then (paid) add domain: CNAME `www` → value from Web tab, enable HTTPS.
 
 **Note:** Your own domain (e.g. `www.yourdomain.com`) requires a **paid** PythonAnywhere account. You can start on the free tier at `yourusername.pythonanywhere.com` to test, then add the domain after upgrading.
+
+---
+
+## Updating an existing deployment (no need to redo everything)
+
+When you have new code (e.g. after changes locally), you only need to **replace the code** on PA. Do **not** redo virtualenv, .env, WSGI, or the domain.
+
+1. **On your computer**, zip the project (same as in section 2): a zip whose top level is a folder `tei-helper` with all files inside, excluding `.git`, `.venv`, `__pycache__`. Do **not** put `.env` in the zip (it should not be in the repo).
+2. On PythonAnywhere **Files** tab, upload that zip to your home directory.
+3. In a **Bash** console run:
+   ```bash
+   cd ~
+   unzip -o tei-helper.zip
+   rm tei-helper.zip
+   ```
+   This overwrites the existing `~/tei-helper` files (e.g. `app.py`, `templates/`, `static/`) with the new ones. Your existing `.env` in `~/tei-helper` is **not** in the zip, so it is left unchanged.
+4. In the **Web** tab, click **Reload** for your web app.
+
+If you added new dependencies in `requirements.txt`, run `pip install -r requirements.txt` in your virtualenv (e.g. `workon tei-edit` then `pip install -r requirements.txt`) before reloading.
 
 ---
 
@@ -17,21 +36,35 @@ Step-by-step for deploying TEI-edit on PythonAnywhere and connecting a domain yo
 
 ## 2. Get the code onto PythonAnywhere
 
-**Option A: Git (if the repo is public or you use SSH keys)**
+**Option A: Upload a zip (no SSH or git needed)**
 
-- Open a **Bash** console on PythonAnywhere (Consoles → Bash).
-- Run:
+1. **On your computer**, create a zip that contains a single folder `tei-helper` with everything inside it, **without** `.git` (not needed on PA and wastes space):
+   - Go to the **parent** of your project (e.g. if the project is in `Documents/tei-helper`, go to `Documents`).
+   - **Windows:** In File Explorer, select the contents of `tei-helper` (not the folder itself), or use 7‑Zip/WinRAR “Add to archive” and exclude `.git`. Or zip the folder, then the next step (delete on PA) still works.
+   - **macOS:** In Terminal, from the parent dir:  
+     `zip -r tei-helper.zip tei-helper -x "tei-helper/.git/*" -x "tei-helper/.venv/*" -x "tei-helper/__pycache__/*" -x "*.pyc"`  
+     (Or right‑click → Compress, then remove `.git` on PA after unzip.)
+   - **Linux:** From the parent dir:  
+     `zip -r tei-helper.zip tei-helper -x "tei-helper/.git/*" -x "tei-helper/.venv/*" -x "tei-helper/__pycache__/*" -x "*.pyc"`.
+2. On PythonAnywhere, open the **Files** tab and go to your home directory (`/home/YOUR_USERNAME/`).
+3. Click **Upload a file**, select `tei-helper.zip`, and wait for the upload to finish.
+4. Open a **Bash** console (Consoles → Bash). Run:
+   ```bash
+   cd ~
+   unzip tei-helper.zip
+   rm tei-helper.zip
+   ```
+   You should now have `~/tei-helper/` with `app.py`, `requirements.txt`, `templates/`, `static/`, etc. inside it.
+5. Check: `ls ~/tei-helper` should list `app.py`, `requirements.txt`, `templates`, `static`, `deploy`, `scripts`, `docs`.
+
+**Option B: Git (if the repo is public and you’re okay with HTTPS or have SSH set up)**
+
+- In a **Bash** console:
   ```bash
   cd ~
   git clone https://github.com/YOUR_USERNAME/tei-helper.git
-  # or: git clone git@github.com:YOUR_USERNAME/tei-helper.git
   cd tei-helper
   ```
-
-**Option B: Upload**
-
-- In the **Files** tab, create a folder (e.g. `tei-helper`) under your home directory.
-- Upload your project files (drag-and-drop or upload zip then unzip in Bash): at least `app.py`, `requirements.txt`, `templates/`, `static/`, `deploy/`, `scripts/`, and optionally `tags.json`, `tei_layout_template.xml`.
 
 ---
 
@@ -96,6 +129,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 1. Open the **Web** tab and click **Add a new web app**.
 2. Choose **Manual configuration** (not the “Flask” wizard) and pick the same Python version as your virtualenv (e.g. 3.10).
 3. After it’s created:
+   - **Source code** (if the form asks for it): enter the path to your project directory, e.g. `/home/YOUR_USERNAME/tei-helper` (replace `YOUR_USERNAME` with your PythonAnywhere username).
    - **Virtualenv:** Click the link, enter `tei-edit` (or the full path, e.g. `/home/YOUR_USERNAME/.virtualenvs/tei-edit`), and save.
    - **WSGI configuration file:** Click the WSGI file link (e.g. `/var/www/yourusername_pythonanywhere_com_wsgi.py` or similar).
 
@@ -128,30 +162,34 @@ You should see the app at `https://YOUR_USERNAME.pythonanywhere.com` (or the URL
 
 ---
 
-## 7. Static files (optional but recommended)
+## 7. Static files and uploads (so CSS and images work)
 
-In the **Web** tab, in the **Static files** section, add:
+In the **Web** tab, in the **Static files** section, add **both** of these (replace `YOUR_USERNAME` with your PythonAnywhere username):
 
-| URL           | Directory                          |
-|---------------|------------------------------------|
-| `/static/`    | `/home/YOUR_USERNAME/tei-helper/static` |
+| URL           | Directory                                  |
+|---------------|--------------------------------------------|
+| `/static/`    | `/home/YOUR_USERNAME/tei-helper/static`     |
+| `/uploads/`   | `/home/YOUR_USERNAME/tei-helper/uploads`   |
 
-This serves CSS/JS from disk instead of through Flask. Uploads are still served by the app.
+- `/static/` serves CSS and JS.
+- `/uploads/` is where the app stores uploaded images/XML; mapping it here makes those files load correctly in the browser. If the `uploads` folder doesn’t exist yet, create it in a Bash console: `mkdir -p ~/tei-helper/uploads`.
 
 ---
 
-## 8. Scheduled task (cleanup)
+## 8. Scheduled task (cleanup) — required for your legal text
 
-To match the privacy policy (delete old uploads and sessions):
+**The 24-hour deletion is not automatic.** Your privacy page says uploads and session data are deleted after 24 hours. To actually do that, you must set up a scheduled task on PythonAnywhere; otherwise the promise in the legal text is not being kept.
 
-1. Open the **Tasks** tab (or “Schedule” on paid accounts).
-2. Add a **daily** or **hourly** task:
+1. Open the **Tasks** tab (Dashboard → Tasks; on paid accounts this may be under “Schedule”).
+2. Add a new task:
    - **Command:**  
      `$HOME/.virtualenvs/tei-edit/bin/python $HOME/tei-helper/scripts/cleanup_sessions_and_uploads.py --quiet`  
-     (If your virtualenv path is different, run `which python` in a Bash console with the venv active and use that path.)
-   - Set the same env as the app (e.g. put `export TEI_HELPER_WEB=1` and `export SECRET_KEY=...` in a small script that then runs the Python command, and call that script from the task; or set env in the task if the UI allows it.)
+     (Replace with your actual paths if different. Get the Python path by running `which python` in a Bash console with your virtualenv active.)
+   - **Schedule:** Daily (or hourly if your plan allows). Running once per day is enough to keep the “deleted after 24 hours” promise, since the script deletes files older than 24 hours.
 
-On free accounts, scheduled tasks may be limited; use the highest frequency you’re allowed (e.g. daily).
+The script does not need `SECRET_KEY` or other app env vars; it only deletes files in `uploads/` and `flask_session/` older than 24 hours (or the value of `CLEANUP_MAX_AGE_HOURS` if you set it in the task’s environment).
+
+**Note:** On **free** PythonAnywhere accounts, scheduled tasks may be unavailable (e.g. for accounts created in 2026). If you have no Tasks tab or cannot add a task, you either need a paid account to run the cleanup, or you must change the privacy text (e.g. to say data is deleted “when possible” or “periodically”) so it matches what actually happens. Do not promise 24-hour deletion in the legal text unless the cleanup task is running.
 
 ---
 
@@ -181,7 +219,7 @@ Detailed instructions: [PythonAnywhere – Custom domains](https://help.pythonan
 - [ ] Web app: Manual config, virtualenv set, WSGI file loads `.env` and does `from app import app as application`
 - [ ] Reload web app; test at `yourusername.pythonanywhere.com`
 - [ ] Static files: `/static/` → project `static` folder
-- [ ] Task: run `scripts/cleanup_sessions_and_uploads.py` daily/hourly
+- [ ] **Scheduled task:** run `scripts/cleanup_sessions_and_uploads.py` daily (required for the “24h deletion” in your privacy text)
 - [ ] (Paid) Domain: CNAME `www` → `webapp-XXXX.pythonanywhere.com`, SSL and Force HTTPS
 
 If you see **502** or **504**: check the **Error log** on the Web tab; usually the WSGI file path is wrong, the virtualenv is wrong, or `SECRET_KEY` is missing and the app raises at import.

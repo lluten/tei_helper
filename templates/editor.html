@@ -84,13 +84,17 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="zoom-layer" id="zoomLayer">
+            <div class="zoom-layer {% if not img_url %}zoom-layer-no-image{% endif %}" id="zoomLayer">
                 {% if img_url %}
                 <img src="{{ img_url }}" id="sourceImage" alt="Manuscript">
                 <svg id="overlaySVG" preserveAspectRatio="none"></svg>
                 {% else %}
                 <div id="noImagePlaceholder" class="no-image-placeholder">
-                    No Image Source Found
+                    <p class="no-image-text">Automatic image retrieval is not available. Please upload the page image.</p>
+                    <button type="button" class="no-image-btn" onclick="document.getElementById('change-image-input').click();">Upload image</button>
+                    {% if image_src %}
+                    <p class="no-image-link-wrap">Image link: <a href="{{ image_src }}" target="_blank" rel="noopener noreferrer" class="no-image-link">{{ image_src[:60] }}{% if image_src|length > 60 %}…{% endif %}</a></p>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -132,7 +136,7 @@
                 {{ initial_html | safe }}
                 {% else %}
                 {% for line in lines %}
-                <div class="line-wrapper" data-points="{{ line.points }}" contenteditable="true"
+                <div class="line-wrapper" data-points="{{ line.points }}" contenteditable="true" spellcheck="false"
                     onmouseenter="highlightLine('{{ line.points }}')" onmouseleave="removeHighlight()">
                     {% if line.html %}
                     {{ line.html | safe }}
@@ -240,6 +244,8 @@
         let ORIG_W = parseFloat(configDiv.dataset.origWidth) || 0;
         let ORIG_H = parseFloat(configDiv.dataset.origHeight) || 0;
         const currentPageIndex = parseInt(configDiv.dataset.currentPageIndex || '0', 10);
+
+        document.querySelectorAll('.line-wrapper').forEach(function(el) { el.setAttribute('spellcheck', 'false'); });
 
         function goToPage(targetIndex) {
             const total = {{ total_pages | default(1) }};
@@ -350,6 +356,7 @@
             div.className = 'line-wrapper';
             div.setAttribute('data-points', '');
             div.setAttribute('contenteditable', 'true');
+            div.setAttribute('spellcheck', 'false');
             div.setAttribute('onmouseenter', 'highlightLine(\'\')');
             div.setAttribute('onmouseleave', 'removeHighlight()');
             div.appendChild(document.createElement('br'));
@@ -360,8 +367,6 @@
             const form = document.getElementById('change-image-form');
             const input = document.getElementById('change-image-input');
             if (!form || !input) return;
-            const noImg = document.getElementById('noImagePlaceholder');
-            if (noImg) noImg.addEventListener('click', function() { input.value = ''; input.click(); });
             input.addEventListener('change', function() {
                 if (input.files && input.files.length) form.submit();
             });

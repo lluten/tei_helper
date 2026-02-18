@@ -16,7 +16,7 @@ SESSION_FILE_DIR = os.environ.get('SESSION_FILE_DIR', os.path.join(BASE, 'flask_
 DEFAULT_MAX_AGE_HOURS = 24
 
 
-def cleanup_dir(path: str, max_age_seconds: float) -> int:
+def cleanup_dir(path: str, max_age_seconds: float, dry_run: bool = False) -> int:
     if not os.path.isdir(path):
         return 0
     now = time.time()
@@ -25,7 +25,8 @@ def cleanup_dir(path: str, max_age_seconds: float) -> int:
         full = os.path.join(path, name)
         try:
             if os.path.isfile(full) and (now - os.path.getmtime(full)) > max_age_seconds:
-                os.remove(full)
+                if not dry_run:
+                    os.remove(full)
                 removed += 1
         except OSError:
             pass
@@ -33,13 +34,17 @@ def cleanup_dir(path: str, max_age_seconds: float) -> int:
 
 
 def main():
+    dry_run = '--dry-run' in sys.argv
     max_age_hours = float(os.environ.get('CLEANUP_MAX_AGE_HOURS', DEFAULT_MAX_AGE_HOURS))
     max_age_seconds = max_age_hours * 3600
 
-    n_uploads = cleanup_dir(UPLOAD_FOLDER, max_age_seconds)
-    n_sessions = cleanup_dir(SESSION_FILE_DIR, max_age_seconds)
+    n_uploads = cleanup_dir(UPLOAD_FOLDER, max_age_seconds, dry_run=dry_run)
+    n_sessions = cleanup_dir(SESSION_FILE_DIR, max_age_seconds, dry_run=dry_run)
 
-    if '--quiet' not in sys.argv and (n_uploads or n_sessions):
+    if dry_run:
+        print('Would remove {} upload(s) and {} session file(s) older than {:.1f}h. (Run without --dry-run to delete.)'.format(
+            n_uploads, n_sessions, max_age_hours))
+    elif '--quiet' not in sys.argv and (n_uploads or n_sessions):
         print('Removed {} upload(s) and {} session file(s) older than {:.0f}h.'.format(
             n_uploads, n_sessions, max_age_hours))
 
