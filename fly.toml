@@ -1,7 +1,10 @@
 # Fly.io app config. Set secrets with: fly secrets set SECRET_KEY=your-key
 # Optionally: fly secrets set PRIVACY_CONTACT_EMAIL=you@example.com
+#
+# App name must be globally unique on Fly.io. If "failed to create app", pick a
+# different name (e.g. tei-edit-YOURUSERNAME or tei-edit-university).
 
-app = "tei-edit"
+app = "tei-edit-lluten"
 
 [build]
 

@@ -1,6 +1,7 @@
 # Deploy TEI-edit on Fly.io
 
-1. **Connect GitHub** in the Fly.io dashboard and select this repo (or run `fly launch` locally and link the app).
+1. **App name**: App names are **globally unique** on Fly.io. If you get "failed to create app", the name in `fly.toml` (e.g. `tei-edit`) is likely taken. Edit `fly.toml` and set `app = "tei-edit-YOURUSERNAME"` (or another unique name), then try again.
+2. **Connect GitHub** in the Fly.io dashboard and select this repo (or run `fly launch` locally and link the app).
 2. **Set secrets** (required): In Fly dashboard → your app → Secrets, or run:
    ```bash
    fly secrets set SECRET_KEY="your-strong-secret-at-least-32-characters"
