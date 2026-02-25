@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <title>TEI-edit</title>
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -12,8 +15,9 @@
 <body class="editor-page">
     {% include '_app_nav.html' %}
     <div id="app-config" data-orig-width="{{ orig_width|default(0) }}" data-orig-height="{{ orig_height|default(0) }}"
-        data-tags='{{ tags | tojson | safe }}' data-current-page-index="{{ current_page_index|default(0) }}"
-        data-highlight-gram="{{ highlight_gram or '' }}" style="display:none;">
+        data-tags='{{ tags | tojson | safe }}' data-hand-ids='{{ hand_ids | default([]) | tojson | safe }}'
+        data-hands='{{ hands | default([]) | tojson | safe }}'
+        data-current-page-index="{{ current_page_index|default(0) }}" data-highlight-gram="{{ highlight_gram or '' }}" style="display:none;">
     </div>
 
     <div id="floatingMenu" class="floating-menu" style="display:none;">
@@ -22,6 +26,7 @@
             <button class="tab-btn active" onclick="switchTab('visual')">Appearance</button>
             <button class="tab-btn" onclick="switchTab('editorial')">Editorial</button>
             <button class="tab-btn" onclick="switchTab('semantic')">Semantic</button>
+            <button class="tab-btn" onclick="switchTab('structural')">Structure</button>
             <button class="tab-btn" onclick="switchTab('ligature')">Ligature</button>
         </div>
 
@@ -45,11 +50,26 @@
                     Tag</span>
                 <div id="activeTagName" style="font-weight:600; font-size:1.1rem; color:var(--text-color);"></div>
             </div>
+            <div id="editMenuAssignHand" style="display:none; padding-bottom:8px; border-bottom:1px solid var(--border-color); margin-bottom:5px;">
+                <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Assign hand</span>
+                <div id="editMenuHandList" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;"></div>
+            </div>
             <button onclick="removeActiveTag()" class="btn-danger">
                 Remove Tag
             </button>
         </div>
 
+    </div>
+    <div id="handDefineModal" class="hand-define-modal" style="display:none;" role="dialog" aria-labelledby="handDefineModalTitle">
+        <div class="hand-define-modal-backdrop" onclick="closeHandDefineModal()"></div>
+        <div class="hand-define-modal-content">
+            <h2 id="handDefineModalTitle" class="hand-define-modal-title">Define hands first</h2>
+            <p class="hand-define-modal-text">Switch to Hand view requires at least one hand in the document. Add hand descriptions in Document Information.</p>
+            <div class="hand-define-modal-actions">
+                <a href="{{ url_for('doc_info') }}" class="primary">Go to Document Information</a>
+                <button type="button" class="btn-secondary" onclick="closeHandDefineModal()">Cancel</button>
+            </div>
+        </div>
     </div>
     <div class="editor-main">
     <div class="main-layout">
@@ -86,8 +106,15 @@
             </div>
             <div class="zoom-layer {% if not img_url %}zoom-layer-no-image{% endif %}" id="zoomLayer">
                 {% if img_url %}
-                <img src="{{ img_url }}" id="sourceImage" alt="Manuscript">
+                <img src="{{ img_url }}" id="sourceImage" alt="Manuscript" onerror="showNoImagePlaceholder()">
                 <svg id="overlaySVG" preserveAspectRatio="none"></svg>
+                <div id="noImagePlaceholder" class="no-image-placeholder" style="display:none;">
+                    <p class="no-image-text">Image could not be loaded from source. Please upload the page image.</p>
+                    <button type="button" class="no-image-btn" onclick="document.getElementById('change-image-input').click();">Upload image</button>
+                    {% if image_src %}
+                    <p class="no-image-link-wrap">Image link: <a href="{{ image_src }}" target="_blank" rel="noopener noreferrer" class="no-image-link">{{ image_src[:60] }}{% if image_src|length > 60 %}…{% endif %}</a></p>
+                    {% endif %}
+                </div>
                 {% else %}
                 <div id="noImagePlaceholder" class="no-image-placeholder">
                     <p class="no-image-text">Automatic image retrieval is not available. Please upload the page image.</p>
@@ -126,18 +153,27 @@
                 <input type="hidden" name="keep_ligatures" id="go-to-page-keep-ligatures">
             </form>
             <div class="editor-and-ligature">
+            <div class="editor-view-toolbar" id="editorViewToolbar">
+                <span class="editor-view-label">View:</span>
+                <div class="editor-view-toggle" role="group">
+                    <button type="button" class="editor-view-btn active" id="btnViewAnnotations" onclick="setEditorViewMode('semantic')" title="Highlights, damage, editorial and semantic tags">Annotations</button>
+                    <button type="button" class="editor-view-btn" id="btnViewHand" onclick="setEditorViewMode('hand')" title="Hand / scribe attribution">Hand</button>
+                    <button type="button" class="editor-view-btn" id="btnViewLigature" onclick="toggleLigaturePanel()" title="Ligature analysis and marking">Ligatures</button>
+                </div>
+            </div>
             {% if import_type == 'image' %}
             <div class="editor-toolbar">
                 <button type="button" class="btn-small" id="btn-add-line" onclick="addEditorLine()">Add line</button>
             </div>
             {% endif %}
-            <div class="editor-wrapper" id="editor" onmouseup="checkSelection()">
+            <div class="editor-wrapper" id="editorWrapper">
+            <div id="editor" contenteditable="true" spellcheck="false" onmouseup="checkSelection()">
                 {% if initial_html %}
                 {{ initial_html | safe }}
                 {% else %}
                 {% for line in lines %}
                 <div class="line-wrapper" data-points="{{ line.points }}" contenteditable="true" spellcheck="false"
-                    onmouseenter="highlightLine('{{ line.points }}')" onmouseleave="removeHighlight()">
+                    onmouseenter="highlightLine('{{ line.points }}')" onmouseleave="removeHighlightOrShowSelection()">
                     {% if line.html %}
                     {{ line.html | safe }}
                     {% else %}
@@ -146,6 +182,7 @@
                 </div>
                 {% endfor %}
                 {% endif %}
+            </div>
             </div>
             <div id="ligaturePanel" class="ligature-panel">
                 <div class="ligature-panel-header">
@@ -185,6 +222,27 @@
                     </table>
                 </div>
             </div>
+            <div id="handPanel" class="hand-panel">
+                <div class="hand-panel-header">
+                    <div class="hand-panel-header-top">
+                        <h3 class="hand-panel-title">Hands</h3>
+                        <button type="button" class="hand-panel-close" onclick="closeHandPanel()" aria-label="Close">&times;</button>
+                    </div>
+                </div>
+                <div class="hand-panel-list-wrap" id="handPanelListWrap"></div>
+                <div class="hand-panel-handshift">
+                    <span class="hand-panel-handshift-label">Change of hand from here</span>
+                    <div class="hand-panel-handshift-row">
+                        <select id="handShiftSelect" class="hand-shift-select">
+                            <option value="">Select hand…</option>
+                        </select>
+                        <button type="button" class="btn-small primary" onclick="applyHandShiftFromSelect()">Insert handShift</button>
+                    </div>
+                </div>
+                <div class="hand-panel-actions">
+                    <button type="button" class="hand-panel-add-btn btn-small" onclick="typeof openAddHandModal === 'function' && openAddHandModal();">+ Add hand</button>
+                </div>
+            </div>
             <div id="ligatureExportModal" class="ligature-export-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="ligatureExportModalTitle">
                 <div class="ligature-export-modal-backdrop" onclick="closeExportPreview()"></div>
                 <div class="ligature-export-modal-box">
@@ -192,7 +250,7 @@
                     <div id="ligatureExportModalStats" class="ligature-export-modal-stats"></div>
                     <div class="ligature-export-modal-actions">
                         <button type="button" class="btn-small primary" id="ligatureExportModalConfirm">Download</button>
-                        <button type="button" class="btn-small" onclick="closeExportPreview()">Cancel</button>
+                        <button type="button" class="btn-small btn-secondary" onclick="closeExportPreview()">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -200,6 +258,8 @@
         </div>
     </div>
     </div>
+
+    {% include '_add_hand_modal.html' %}
 
     {% if total_pages %}
     <div id="managePagesModal" class="reorder-pages-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="managePagesModalTitle">
@@ -236,16 +296,94 @@
 
     <script>
         const pageLabels = {{ page_labels | default([]) | tojson }};
+        const pageImageUrls = {{ page_image_urls | default([]) | tojson }};
     </script>
     <script>
         // --- CONFIG ---
         const configDiv = document.getElementById('app-config');
         const tags = JSON.parse(configDiv.dataset.tags || "[]");
+        let handIds = [];
+        let hands = [];
+        try {
+            if (configDiv.dataset.handIds) handIds = JSON.parse(configDiv.dataset.handIds);
+            if (configDiv.dataset.hands) hands = JSON.parse(configDiv.dataset.hands);
+        } catch (e) {}
+        if (!Array.isArray(handIds)) handIds = [];
+        if (!Array.isArray(hands)) hands = [];
         let ORIG_W = parseFloat(configDiv.dataset.origWidth) || 0;
         let ORIG_H = parseFloat(configDiv.dataset.origHeight) || 0;
         const currentPageIndex = parseInt(configDiv.dataset.currentPageIndex || '0', 10);
 
+        const HAND_VIEW_PALETTE = ['#BBDEFB', '#C8E6C9', '#F8BBD9', '#D1C4E9', '#FFCCBC', '#B2DFDB', '#FFECB3', '#CFD8DC'];
+        let editorViewMode = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('teiEditorViewMode')) || 'semantic';
+        let isInitialViewModeLoad = true;
+
+        function setEditorViewMode(mode) {
+            editorViewMode = mode;
+            if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('teiEditorViewMode', mode);
+            const wrapper = document.getElementById('editorWrapper');
+            const btnAnnotations = document.getElementById('btnViewAnnotations');
+            const btnHand = document.getElementById('btnViewHand');
+            document.querySelectorAll('.editor-view-btn:not(#btnViewLigature)').forEach(b => b.classList.remove('active'));
+            if (mode === 'hand') {
+                const ligaturePanel = document.getElementById('ligaturePanel');
+                if (ligaturePanel) ligaturePanel.classList.remove('is-open');
+                const btnLig = document.getElementById('btnViewLigature');
+                if (btnLig) btnLig.classList.remove('active');
+                if (wrapper) wrapper.classList.add('editor-hand-view');
+                document.querySelectorAll('[data-tag="seg"]').forEach(span => {
+                    const handId = span.getAttribute('data-attr-hand');
+                    if (handId) {
+                        const idx = (handIds || []).indexOf(handId);
+                        if (idx >= 0) {
+                            var pi = idx % HAND_VIEW_PALETTE.length;
+                            span.classList.add('hand-seg', 'hand-seg-' + pi);
+                            span.style.setProperty('background-color', HAND_VIEW_PALETTE[pi], 'important');
+                        }
+                    }
+                });
+                if (btnHand) btnHand.classList.add('active');
+                var handPanel = document.getElementById('handPanel');
+                if (handPanel && !isInitialViewModeLoad) handPanel.classList.add('is-open');
+                if (typeof renderHandPanelList === 'function') renderHandPanelList();
+            } else {
+                if (wrapper) wrapper.classList.remove('editor-hand-view');
+                const handPanel = document.getElementById('handPanel');
+                if (handPanel) handPanel.classList.remove('is-open');
+                const ligaturePanel = document.getElementById('ligaturePanel');
+                if (ligaturePanel) ligaturePanel.classList.remove('is-open');
+                const btnLig = document.getElementById('btnViewLigature');
+                if (btnLig) btnLig.classList.remove('active');
+                if (btnAnnotations) btnAnnotations.classList.add('active');
+                var editor = document.getElementById('editor');
+                if (editor) editor.querySelectorAll('[data-tag="seg"]').forEach(function(span) { span.style.removeProperty('background-color'); });
+                if (typeof applyStoredHighlights === 'function' && ligatureData && ligatureData.lineSegments && ligatureData.lineSegments.length) {
+                    applyStoredHighlights();
+                }
+            }
+        }
+
+        function closeHandDefineModal() {
+            const m = document.getElementById('handDefineModal');
+            if (m) m.style.display = 'none';
+        }
+
+        function showNoImagePlaceholder() {
+            const ph = document.getElementById('noImagePlaceholder');
+            if (ph) ph.style.display = 'flex';
+            const layer = document.getElementById('zoomLayer');
+            if (layer) layer.classList.add('zoom-layer-no-image');
+        }
+
         document.querySelectorAll('.line-wrapper').forEach(function(el) { el.setAttribute('spellcheck', 'false'); });
+
+        (function initEditorViewMode() {
+            try {
+                setEditorViewMode(editorViewMode);
+            } catch (err) { console.warn('Editor view mode init:', err); }
+            isInitialViewModeLoad = false;
+        })();
+        if (typeof renderHandPanelList === 'function') renderHandPanelList();
 
         function goToPage(targetIndex) {
             const total = {{ total_pages | default(1) }};
@@ -279,8 +417,14 @@
             function render() {
                 listEl.innerHTML = order.map((pageIdx, pos) => {
                     const label = (pageLabels && pageLabels[pageIdx]) ? pageLabels[pageIdx] : ('Page ' + (pageIdx + 1));
+                    const imgUrl = (pageImageUrls && pageImageUrls[pageIdx]) ? String(pageImageUrls[pageIdx]) : '';
+                    const srcEsc = imgUrl ? imgUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+                    const thumbHtml = srcEsc
+                        ? '<img class="reorder-pages-thumb" src="' + srcEsc + '" alt="" loading="lazy">'
+                        : '<span class="reorder-pages-thumb reorder-pages-thumb-placeholder" aria-hidden="true">—</span>';
                     return '<li class="reorder-pages-item" data-pos="' + pos + '" data-page-idx="' + pageIdx + '" draggable="true">' +
                         '<span class="reorder-pages-drag-handle" aria-hidden="true">⋮⋮</span>' +
+                        '<span class="reorder-pages-thumb-wrap">' + thumbHtml + '</span>' +
                         '<span class="reorder-pages-label">' + (pos + 1) + '. ' + escapeHtml(label) + '</span>' +
                         '<button type="button" class="reorder-pages-remove-x" data-page-idx="' + pageIdx + '" title="Remove page" aria-label="Remove page">×</button></li>';
                 }).join('');
@@ -358,7 +502,7 @@
             div.setAttribute('contenteditable', 'true');
             div.setAttribute('spellcheck', 'false');
             div.setAttribute('onmouseenter', 'highlightLine(\'\')');
-            div.setAttribute('onmouseleave', 'removeHighlight()');
+            div.setAttribute('onmouseleave', 'removeHighlightOrShowSelection()');
             div.appendChild(document.createElement('br'));
             editor.appendChild(div);
         }
@@ -373,8 +517,17 @@
         })();
 
         const styleSheet = document.createElement("style");
+        styleSheet.id = "tei-tag-styles";
         styleSheet.innerText = tags.map(t => `.tag-${t.code} { background-color: ${t.color}; }`).join("\n");
         document.head.appendChild(styleSheet);
+        const handStyleSheet = document.createElement("style");
+        handStyleSheet.id = "tei-hand-view-styles";
+        handStyleSheet.innerText = HAND_VIEW_PALETTE.map((c, i) => `.editor-hand-view .hand-seg-${i} { background-color: ${c} !important; padding: 0 2px; border-radius: 2px; }\n.editor-hand-view span.hand-seg-${i} { background-color: ${c} !important; }`).join("\n") +
+            ".editor-hand-view .tei-tag:not(.hand-seg):not(.handShift-milestone):not(.hand-seg .tei-tag) { opacity: 0.5; background-color: var(--bg-secondary) !important; }\n" +
+            ".editor-hand-view .hand-seg .tei-tag { opacity: 1 !important; }\n" +
+            ".editor-hand-view .hand-seg .ligature-highlight, .editor-hand-view .hand-seg .ligature-mark { opacity: 1 !important; }\n" +
+            ".editor-hand-view .handShift-milestone { color: var(--text-muted); font-weight: bold; padding: 0 4px; }\n";
+        document.head.appendChild(handStyleSheet);
 
         // --- MENU LOGIC ---
         const menu = document.getElementById('floatingMenu');
@@ -421,14 +574,15 @@
                     No tags in this category.<br><a href="/tags" style="color:var(--text-color);">Add in Config</a>
                 </div>`;
             } else {
-                tagList.innerHTML = filtered.map(t =>
-                    `<button class="tag-option-btn" onclick="selectTag('${t.code}')">
+                tagList.innerHTML = filtered.map(t => {
+                    const color = (t.color || '#b0b0b0').replace(/"/g, '');
+                    return `<button class="tag-option-btn" style="--tag-stripe: ${color}" onclick="selectTag('${t.code}')">
                         <div class="tag-row-main">
                             <span class="tag-label">${t.label}</span>
                         </div>
                         <div class="tag-desc-tiny">${t.description || ''}</div>
-                    </button>`
-                ).join('');
+                    </button>`;
+                }).join('');
             }
         }
 
@@ -471,19 +625,34 @@
                 document.getElementById('selectedTagLabel').textContent = pendingTag.label;
                 document.getElementById('selectedTagDesc').textContent = pendingTag.description || "";
 
-                // UPDATED: Now renders the attribute description inside the label
-                document.getElementById('attrInputs').innerHTML = pendingTag.attrs.map(attr => `
+                // UPDATED: Renders attribute inputs; "hand" attr gets document hand IDs as suggestion chips
+                const attrsToShow = editorViewMode === 'hand' ? pendingTag.attrs : (pendingTag.attrs || []).filter(a => a.name !== 'hand');
+                let attrHtml = attrsToShow.map(attr => {
+                    const opts = (attr.name === 'hand' && handIds.length) ? handIds : (attr.suggestions || []);
+                    const chips = opts.map(s => `<span class="chip" onclick="fillInput('attr-${attr.name}', '${String(s).replace(/'/g, "\\'")}')">${s}</span>`).join('');
+                    return `
                     <div class="attr-block">
                         <label>
                             <span>${attr.label}</span>
                             ${attr.desc ? `<span class="attr-desc-tiny">${attr.desc}</span>` : ''}
                         </label>
-                        <input type="text" id="attr-${attr.name}" placeholder="Value..." autocomplete="off">
+                        <input type="text" id="attr-${attr.name}" placeholder="${attr.name === 'hand' ? '#hand-1' : 'Value...'}" autocomplete="off">
                         <div class="suggestion-chips">
-                            ${(attr.suggestions || []).map(s => `<span class="chip" onclick="fillInput('attr-${attr.name}','${s}')">${s}</span>`).join('')}
+                            ${chips}
                         </div>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
+                if (editorViewMode === 'hand' && handIds.length && !pendingTag.attrs.some(a => a.name === 'hand')) {
+                    attrHtml += `
+                    <div class="attr-block attr-block-optional">
+                        <label><span>Scribe / Hand (optional)</span></label>
+                        <select id="attr-hand-optional">
+                            <option value="">— None —</option>
+                            ${handIds.map(id => `<option value="${id.replace(/"/g, '&quot;')}">${id}</option>`).join('')}
+                        </select>
+                    </div>`;
+                }
+                document.getElementById('attrInputs').innerHTML = attrHtml;
 
                 setTimeout(() => {
                     const firstInput = document.querySelector('#attrInputs input');
@@ -500,10 +669,198 @@
                 const el = document.getElementById(`attr-${attr.name}`);
                 if (el && el.value) attrs[attr.name] = el.value;
             });
+            const handOpt = document.getElementById('attr-hand-optional');
+            if (handOpt && handOpt.value) attrs.hand = handOpt.value;
             applyTag(attrs);
         }
 
         function cancelAttr() { attrForm.style.display = 'none'; tagList.style.display = 'block'; }
+
+        function closeHandPanel() {
+            setEditorViewMode('semantic');
+        }
+        function renderHandPanelList() {
+            const wrap = document.getElementById('handPanelListWrap');
+            if (!wrap) return;
+            const list = (hands && hands.length) ? hands : (handIds || []).map(id => ({ xml_id: String(id).replace(/^#/, '') }));
+            if (list.length === 0) {
+                wrap.innerHTML = '<p class="hand-panel-empty">No hands defined. Add one in Document Information.</p>';
+                const handShiftSelect = document.getElementById('handShiftSelect');
+                if (handShiftSelect) handShiftSelect.innerHTML = '<option value="">Select hand…</option>';
+                return;
+            }
+            wrap.innerHTML = list.map((h, i) => {
+                const id = (h.xml_id || (h.id !== undefined ? h.id : '')).toString().replace(/^#/, '') || ('hand-' + (i + 1));
+                const handId = id.startsWith('#') ? id : '#' + id;
+                const desc = (h.description || h.desc || '').toString().trim();
+                const scribe = (h.scribe || '').toString().trim();
+                const color = HAND_VIEW_PALETTE[i % HAND_VIEW_PALETTE.length];
+                const label = scribe ? (id + ' — ' + scribe) : id;
+                return `<button type="button" class="hand-panel-card" style="--hand-color: ${color}" onmousedown="var s=window.getSelection(); if(s&&s.rangeCount){currentRange=s.getRangeAt(0).cloneRange();}" onclick="applyHandSeg('${handId.replace(/'/g, "\\'")}')" title="Assign to selection">
+                    <span class="hand-panel-card-id">${escapeHtml(label)}</span>
+                    ${desc ? `<span class="hand-panel-card-desc">${escapeHtml(desc.slice(0, 120))}${desc.length > 120 ? '…' : ''}</span>` : ''}
+                </button>`;
+            }).join('');
+            const handShiftSelect = document.getElementById('handShiftSelect');
+            if (handShiftSelect) {
+                handShiftSelect.innerHTML = '<option value="">Select hand…</option>' + (handIds || []).map(id => `<option value="${String(id).replace(/"/g, '&quot;')}">${escapeHtml(String(id).replace(/^#/, ''))}</option>`).join('');
+            }
+        }
+
+        document.addEventListener('addhand:saved', function(e) {
+            const hand = e.detail && e.detail.hand;
+            if (!hand) return;
+            fetch('{{ url_for("editor_add_hand") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(hand)
+            }).then(function(r) {
+                if (!r.ok) throw new Error('Add hand failed');
+                return r.json();
+            }).then(function(data) {
+                hands = data.hands || [];
+                handIds = (hands || []).map(function(h) {
+                    var id = (h.xml_id || '').toString().trim().replace(/^#/, '');
+                    return id ? '#' + id : null;
+                }).filter(Boolean);
+                if (typeof renderHandPanelList === 'function') renderHandPanelList();
+            }).catch(function(err) { console.warn('Add hand:', err); });
+        });
+
+        function rangeIntersectionWithLine(range, lineEl) {
+            try {
+                if (!range.intersectsNode(lineEl)) return null;
+                var lineStart = document.createRange();
+                lineStart.selectNodeContents(lineEl);
+                lineStart.collapse(true);
+                var lineEnd = document.createRange();
+                lineEnd.selectNodeContents(lineEl);
+                lineEnd.collapse(false);
+                var inter = document.createRange();
+                inter.setStart(range.startContainer, range.startOffset);
+                inter.setEnd(range.endContainer, range.endOffset);
+                if (inter.compareBoundaryPoints(Range.START_TO_START, lineEnd) > 0) return null;
+                if (inter.compareBoundaryPoints(Range.END_TO_END, lineStart) < 0) return null;
+                if (inter.compareBoundaryPoints(Range.START_TO_START, lineStart) < 0) inter.setStart(lineStart.startContainer, lineStart.startOffset);
+                if (inter.compareBoundaryPoints(Range.END_TO_END, lineEnd) > 0) inter.setEnd(lineEnd.endContainer, lineEnd.endOffset);
+                if (inter.collapsed) return null;
+                return inter;
+            } catch (e) { return null; }
+        }
+
+        function applyHandSeg(handId) {
+            if (!handId) return;
+            var editor = document.getElementById('editor');
+            if (!editor) return;
+            var range = (currentRange && !currentRange.collapsed) ? currentRange.cloneRange() : null;
+            if (!range) return;
+            if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) return;
+            var wrapper = document.getElementById('editorWrapper');
+            if (wrapper) wrapper.classList.add('editor-hand-view');
+            var idx = (handIds || []).indexOf(handId);
+            var paletteIdx = idx >= 0 ? idx % HAND_VIEW_PALETTE.length : 0;
+            var segClass = idx >= 0 ? 'hand-seg hand-seg-' + paletteIdx : 'hand-seg';
+            var bgColor = idx >= 0 ? HAND_VIEW_PALETTE[paletteIdx] : '#BBDEFB';
+            var lineWrappers = editor.querySelectorAll('.line-wrapper');
+            var segments = [];
+            for (var i = 0; i < lineWrappers.length; i++) {
+                var inter = rangeIntersectionWithLine(range, lineWrappers[i]);
+                if (inter) segments.push({ lineEl: lineWrappers[i], range: inter });
+            }
+            if (segments.length === 0) {
+                var span = document.createElement('span');
+                span.className = 'tei-tag ' + segClass;
+                span.setAttribute('data-tag', 'seg');
+                span.setAttribute('data-attr-hand', handId);
+                span.title = 'Hand: ' + handId;
+                span.style.cssText = 'background-color: ' + bgColor + ' !important; padding: 0 2px; border-radius: 2px;';
+                try {
+                    var fragment = range.extractContents();
+                    range.insertNode(span);
+                    span.appendChild(fragment);
+                } catch (err) {
+                    try {
+                        var text = range.toString();
+                        range.deleteContents();
+                        span.textContent = text;
+                        range.insertNode(span);
+                    } catch (e2) { return; }
+                }
+                closeMenu();
+                window.getSelection().removeAllRanges();
+                return;
+            }
+            function makeSegSpan() {
+                var s = document.createElement('span');
+                s.className = 'tei-tag ' + segClass;
+                s.setAttribute('data-tag', 'seg');
+                s.setAttribute('data-attr-hand', handId);
+                s.title = 'Hand: ' + handId;
+                s.style.cssText = 'background-color: ' + bgColor + ' !important; padding: 0 2px; border-radius: 2px;';
+                return s;
+            }
+            if (segments.length === 1) {
+                var seg = segments[0].range;
+                try {
+                    var fragment = seg.extractContents();
+                    var span = makeSegSpan();
+                    seg.insertNode(span);
+                    span.appendChild(fragment);
+                } catch (err) {
+                    try {
+                        var text = seg.toString();
+                        seg.deleteContents();
+                        var span = makeSegSpan();
+                        span.textContent = text;
+                        seg.insertNode(span);
+                    } catch (e2) { return; }
+                }
+            } else {
+                for (var j = segments.length - 1; j >= 0; j--) {
+                    var seg = segments[j].range;
+                    try {
+                        var fragment = seg.extractContents();
+                        var span = makeSegSpan();
+                        seg.insertNode(span);
+                        span.appendChild(fragment);
+                    } catch (err) {
+                        try {
+                            var text = seg.toString();
+                            seg.deleteContents();
+                            var span = makeSegSpan();
+                            span.textContent = text;
+                            seg.insertNode(span);
+                        } catch (e2) {}
+                    }
+                }
+            }
+            closeMenu();
+            window.getSelection().removeAllRanges();
+        }
+
+        function applyHandShiftFromSelect() {
+            const sel = document.getElementById('handShiftSelect');
+            const handId = sel && sel.value;
+            if (!handId) return;
+            applyHandShift(handId);
+        }
+
+        function applyHandShift(handId) {
+            if (!currentRange || !handId) return;
+            const span = document.createElement('span');
+            span.className = 'tei-tag handShift-milestone';
+            span.setAttribute('data-tag', 'handShift');
+            span.setAttribute('data-attr-new', handId);
+            span.setAttribute('contenteditable', 'false');
+            span.title = 'Hand shift: ' + handId;
+            span.textContent = '\u00B6';
+            try {
+                currentRange.insertNode(span);
+                span.parentNode.insertBefore(document.createTextNode('\u200B'), span.nextSibling);
+            } catch (e) { }
+            closeMenu();
+            window.getSelection().removeAllRanges();
+        }
 
         function applyTag(attrs) {
             if (!pendingTag || !currentRange) return;
@@ -526,6 +883,7 @@
         function checkSelection() {
             const sel = window.getSelection();
             if (sel.isCollapsed || !sel.rangeCount) {
+                removeHighlight();
                 setTimeout(() => {
                     if (document.activeElement.closest('#floatingMenu')) return;
                     const node = sel.anchorNode;
@@ -535,16 +893,19 @@
                 }, 100);
                 return;
             }
-
-            // Standard Creation Mode
+            highlightLinesFromSelection();
             currentRange = sel.getRangeAt(0);
+            if (editorViewMode === 'hand') {
+                return;
+            }
             showMenuAt(currentRange.getBoundingClientRect());
-            switchTab('visual'); // Default tab
+            switchTab('visual');
         }
 
         // 3. EDIT EXISTING TAG LOGIC + LIGATURE CLICK
         document.getElementById('editor').addEventListener('click', function (e) {
             if (e.target.classList.contains('tei-tag')) {
+                if (e.target.getAttribute('data-tag') === 'seg' && editorViewMode !== 'hand') return;
                 e.stopPropagation(); // Stop normal selection logic
                 activeTagElement = e.target;
                 activeLigatureElement = null;
@@ -559,6 +920,21 @@
                 const code = activeTagElement.getAttribute('data-tag');
                 const def = tags.find(t => t.code === code);
                 document.getElementById('activeTagName').textContent = def ? def.label : code;
+
+                // In hand mode only: show "Assign hand" options for this tag
+                const assignHandBlock = document.getElementById('editMenuAssignHand');
+                const handListEl = document.getElementById('editMenuHandList');
+                if (editorViewMode === 'hand' && assignHandBlock && handListEl) {
+                    assignHandBlock.style.display = 'block';
+                    const list = (hands && hands.length) ? hands : (handIds || []).map(function(id) { return { xml_id: String(id).replace(/^#/, '') }; });
+                    handListEl.innerHTML = list.length ? list.map(function(h, i) {
+                        var id = (h.xml_id || '').toString().replace(/^#/, '') || ('hand-' + (i + 1));
+                        var handId = id.startsWith('#') ? id : '#' + id;
+                        return '<button type="button" class="btn-small" onclick="assignHandToActiveTag(\'' + handId.replace(/'/g, "\\'") + '\')">' + escapeHtml(id) + '</button>';
+                    }).join('') : '<span style="font-size:0.85rem; color:var(--text-muted);">No hands defined. Add in Doc Info.</span>';
+                } else if (assignHandBlock) {
+                    assignHandBlock.style.display = 'none';
+                }
 
                 showMenuAt(activeTagElement.getBoundingClientRect());
                 return;
@@ -586,6 +962,13 @@
             }
         });
 
+        function assignHandToActiveTag(handId) {
+            if (!activeTagElement || !handId) return;
+            activeTagElement.setAttribute('data-attr-hand', handId);
+            activeTagElement.title = (activeTagElement.getAttribute('data-tag') || 'tag') + ' (hand: ' + handId + ')';
+            closeMenu();
+        }
+
         function removeActiveTag() {
             if (!activeTagElement) return;
 
@@ -601,16 +984,20 @@
 
         function showMenuAt(rect) {
             menu.style.display = 'flex';
-            const menuH = 300;
-            const menuW = 340;
+            const menuW = menu.offsetWidth;
+            const menuH = Math.min(menu.offsetHeight, window.innerHeight * 0.85);
+            const margin = 12;
             let top = rect.bottom + 10;
             let left = rect.left;
-            if (left + menuW > window.innerWidth) left = window.innerWidth - menuW;
-            if (left < 0) left = 0;
-            if (top + menuH > window.innerHeight) top = rect.top - menuH - 4;
-            if (top < 0) top = 8;
-            menu.style.top = `${top}px`;
-            menu.style.left = `${left}px`;
+            if (left + menuW + margin > window.innerWidth) left = window.innerWidth - menuW - margin;
+            if (left < margin) left = margin;
+            if (top + menuH + margin > window.innerHeight) top = rect.top - menuH - 8;
+            if (top < margin) top = margin;
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
+            menu.style.bottom = 'auto';
+            menu.style.right = 'auto';
+            menu.style.maxHeight = '';
         }
 
         function closeMenu() {
@@ -620,37 +1007,46 @@
             activeLigatureElement = null;
         }
 
-        // --- ZOOM / IMAGE LOGIC ---
-        const viewport = document.getElementById('viewport');
-        const zoomLayer = document.getElementById('zoomLayer');
-        const img = document.getElementById('sourceImage');
-        const svg = document.getElementById('overlaySVG');
-
+        // --- ZOOM / IMAGE LOGIC (deferred so viewport has layout) ---
         let scale = 1, pX = 0, pY = 0, isDragging = false, startX = 0, startY = 0;
+        let viewport, zoomLayer, img, svg;
 
-        function initImage() {
-            if (ORIG_W === 0 && img.naturalWidth > 0) ORIG_W = img.naturalWidth;
-            if (ORIG_H === 0 && img.naturalHeight > 0) ORIG_H = img.naturalHeight;
+        function setupImageAndZoom() {
+            viewport = document.getElementById('viewport');
+            zoomLayer = document.getElementById('zoomLayer');
+            img = document.getElementById('sourceImage');
+            svg = document.getElementById('overlaySVG');
+            if (!viewport || !zoomLayer) return;
 
-            if (ORIG_W > 0 && ORIG_H > 0) {
-                svg.setAttribute('viewBox', `0 0 ${ORIG_W} ${ORIG_H}`);
-                scale = (viewport.clientWidth - 40) / ORIG_W;
-                pX = 20; pY = 20; updateTransform();
+            function initImage() {
+                if (!img || !svg) return;
+                if (ORIG_W === 0 && img.naturalWidth > 0) ORIG_W = img.naturalWidth;
+                if (ORIG_H === 0 && img.naturalHeight > 0) ORIG_H = img.naturalHeight;
+                if (ORIG_W > 0 && ORIG_H > 0) {
+                    svg.setAttribute('viewBox', '0 0 ' + ORIG_W + ' ' + ORIG_H);
+                    var w = viewport.clientWidth;
+                    if (w <= 0) w = Math.floor(window.innerWidth / 2);
+                    scale = (w - 40) / ORIG_W;
+                    if (scale > 20) scale = 20;
+                    if (scale < 0.05) scale = 0.05;
+                    pX = 20; pY = 20;
+                    zoomLayer.style.transform = 'translate(' + pX + 'px, ' + pY + 'px) scale(' + scale + ')';
+                }
             }
-        }
 
-        if (img) {
-            if (img.complete) initImage();
-            img.onload = initImage;
-        }
+            function updateTransform() { if (zoomLayer) zoomLayer.style.transform = 'translate(' + pX + 'px, ' + pY + 'px) scale(' + scale + ')'; }
 
-        function updateTransform() { zoomLayer.style.transform = `translate(${pX}px, ${pY}px) scale(${scale})`; }
+            if (img) {
+                if (img.complete) setTimeout(initImage, 0);
+                else img.onload = function() { setTimeout(initImage, 0); };
+            }
+            window.addEventListener('resize', function() { if (ORIG_W > 0 && ORIG_H > 0) initImage(); });
 
-        viewport.addEventListener('mousedown', e => { if (e.button !== 0) return; e.preventDefault(); isDragging = true; startX = e.clientX - pX; startY = e.clientY - pY; viewport.style.cursor = 'grabbing'; });
-        window.addEventListener('mousemove', e => { if (!isDragging) return; e.preventDefault(); pX = e.clientX - startX; pY = e.clientY - startY; updateTransform(); });
-        window.addEventListener('mouseup', () => { isDragging = false; viewport.style.cursor = 'grab'; });
+            viewport.addEventListener('mousedown', function(e) { if (e.button !== 0) return; e.preventDefault(); isDragging = true; startX = e.clientX - pX; startY = e.clientY - pY; viewport.style.cursor = 'grabbing'; });
+            window.addEventListener('mousemove', function(e) { if (!isDragging) return; e.preventDefault(); pX = e.clientX - startX; pY = e.clientY - startY; updateTransform(); });
+            window.addEventListener('mouseup', function() { isDragging = false; if (viewport) viewport.style.cursor = 'grab'; });
 
-        viewport.addEventListener('wheel', e => {
+            viewport.addEventListener('wheel', function(e) {
             e.preventDefault();
             const d = e.deltaY > 0 ? -1 : 1;
             let ns = scale + (d * 0.1 * scale);
@@ -668,19 +1064,68 @@
 
             scale = ns;
             updateTransform();
-        }, { passive: false });
+            }, { passive: false });
+        }
 
         function highlightLine(pts) {
-            if (!pts) return;
+            var el = svg || document.getElementById('overlaySVG');
+            if (!pts || !el) return;
+            var sel = window.getSelection();
+            if (sel && !sel.isCollapsed && sel.rangeCount) return;
             const p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
             p.setAttribute("points", pts);
             p.style.fill = "rgba(255,215,0,0.35)";
             p.setAttribute("vector-effect", "non-scaling-stroke");
             p.style.stroke = "#ffae00";
             p.style.strokeWidth = "2";
-            svg.innerHTML = ''; svg.appendChild(p);
+            el.innerHTML = ''; el.appendChild(p);
         }
-        function removeHighlight() { if (svg) svg.innerHTML = ''; }
+        function highlightLines(pointsArray) {
+            var el = svg || document.getElementById('overlaySVG');
+            if (!el || !pointsArray || !pointsArray.length) return;
+            el.innerHTML = '';
+            pointsArray.forEach(function(pts) {
+                if (!pts) return;
+                const p = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                p.setAttribute("points", pts);
+                p.style.fill = "rgba(255,215,0,0.35)";
+                p.setAttribute("vector-effect", "non-scaling-stroke");
+                p.style.stroke = "#ffae00";
+                p.style.strokeWidth = "2";
+                el.appendChild(p);
+            });
+        }
+        function highlightLinesFromSelection() {
+            var sel = window.getSelection();
+            if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+            var range = sel.getRangeAt(0);
+            var editor = document.getElementById('editor');
+            if (!editor || !range.intersectsNode(editor)) return;
+            var lineWrappers = editor.querySelectorAll('.line-wrapper');
+            var points = [];
+            for (var i = 0; i < lineWrappers.length; i++) {
+                var lw = lineWrappers[i];
+                try {
+                    if (range.intersectsNode(lw)) {
+                        var pts = lw.getAttribute('data-points');
+                        if (pts) points.push(pts);
+                    }
+                } catch (e) {}
+            }
+            if (points.length) highlightLines(points);
+        }
+        function removeHighlight() { var el = svg || document.getElementById('overlaySVG'); if (el) el.innerHTML = ''; }
+        function removeHighlightOrShowSelection() {
+            var sel = window.getSelection();
+            if (sel && !sel.isCollapsed && sel.rangeCount) highlightLinesFromSelection();
+            else removeHighlight();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() { setTimeout(setupImageAndZoom, 50); });
+        } else {
+            setTimeout(setupImageAndZoom, 50);
+        }
 
         function doExport(format) {
             document.getElementById('export_format').value = format;
@@ -1141,14 +1586,41 @@
 
         function toggleLigaturePanel() {
             const panel = document.getElementById('ligaturePanel');
+            const handPanel = document.getElementById('handPanel');
+            const wrapper = document.getElementById('editorWrapper');
+            const btnAnnotations = document.getElementById('btnViewAnnotations');
+            const btnHand = document.getElementById('btnViewHand');
+            const btnLig = document.getElementById('btnViewLigature');
+            const editor = document.getElementById('editor');
+            if (handPanel && handPanel.classList.contains('is-open')) handPanel.classList.remove('is-open');
             const isOpen = panel.classList.toggle('is-open');
+            if (btnLig) btnLig.classList.toggle('active', isOpen);
             if (isOpen) {
+                if (btnAnnotations) btnAnnotations.classList.remove('active');
+                if (btnHand) btnHand.classList.remove('active');
+                if (wrapper) wrapper.classList.remove('editor-hand-view');
+                if (editor) editor.querySelectorAll('[data-tag="seg"]').forEach(function(span) { span.style.removeProperty('background-color'); });
                 runLigatureAnalysisThenApply();
             } else {
+                if (editorViewMode === 'hand' && wrapper && editor) {
+                    wrapper.classList.add('editor-hand-view');
+                    editor.querySelectorAll('[data-tag="seg"]').forEach(function(span) {
+                        var handId = span.getAttribute('data-attr-hand');
+                        if (handId) {
+                            var idx = (handIds || []).indexOf(handId);
+                            if (idx >= 0) {
+                                var pi = idx % HAND_VIEW_PALETTE.length;
+                                span.classList.add('hand-seg', 'hand-seg-' + pi);
+                                span.style.setProperty('background-color', HAND_VIEW_PALETTE[pi], 'important');
+                            }
+                        }
+                    });
+                }
+                if (editorViewMode === 'hand' && btnHand) btnHand.classList.add('active');
+                else if (btnAnnotations) btnAnnotations.classList.add('active');
                 document.body.style.overflow = '';
                 document.body.style.position = '';
                 document.documentElement.style.overflow = '';
-                const editor = document.getElementById('editor');
                 if (editor) editor.focus({ preventScroll: true });
             }
         }

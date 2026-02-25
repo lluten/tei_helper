@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <title>TEI-edit</title>
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -14,7 +17,7 @@
             <span class="brand-lg">TEI-edit</span>
         </div>
         <p class="subtitle">Upload documents to start annotating. Choose import type and one or more files (order = page order).</p>
-        <p class="subtitle" style="margin-bottom: 12px;">By using this service you agree to our <a href="{{ url_for('privacy') }}">Privacy &amp; terms</a>.</p>
+        <p class="subtitle" style="margin-bottom: 12px;">By using this application you agree to our <a href="{{ url_for('terms') }}">Terms</a>.</p>
 
         <form action="{{ url_for('index') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">

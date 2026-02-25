@@ -1,0 +1,88 @@
+<div id="addHandModal" class="add-hand-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="addHandModalTitle">
+    <div class="add-hand-modal-backdrop" onclick="closeAddHandModal()"></div>
+    <div class="add-hand-modal-box">
+        <div class="add-hand-modal-header">
+            <h3 id="addHandModalTitle" class="add-hand-modal-title">Add hand</h3>
+            <button type="button" class="add-hand-modal-close" onclick="closeAddHandModal()" aria-label="Close">&times;</button>
+        </div>
+        <form id="addHandForm" class="add-hand-form">
+            <div class="add-hand-grid">
+                <div class="input-wrap">
+                    <label for="addHandXmlId">xml:id</label>
+                    <input type="text" id="addHandXmlId" name="xml_id" placeholder="hand-1" autocomplete="off">
+                </div>
+                <div class="input-wrap">
+                    <label for="addHandScope">scope</label>
+                    <select id="addHandScope" name="scope">
+                        <option value="">—</option>
+                        <option value="major">major</option>
+                        <option value="minor">minor</option>
+                    </select>
+                </div>
+                <div class="input-wrap">
+                    <label for="addHandMedium">medium</label>
+                    <input type="text" id="addHandMedium" name="medium" placeholder="e.g. brown_ink, pencil" autocomplete="off">
+                </div>
+                <div class="input-wrap">
+                    <label for="addHandScribe">scribe</label>
+                    <input type="text" id="addHandScribe" name="scribe" placeholder="Scribe name or identifier" autocomplete="off">
+                </div>
+                <div class="input-wrap full">
+                    <label for="addHandLocus">locus (optional)</label>
+                    <input type="text" id="addHandLocus" name="locus" placeholder="e.g. fol. 1r-5v" autocomplete="off">
+                </div>
+                <div class="input-wrap full">
+                    <label for="addHandDescription">Description (text; may include &lt;term&gt;, &lt;ref&gt;)</label>
+                    <textarea id="addHandDescription" name="description" placeholder="e.g. Main script in &lt;term&gt;Kurrent&lt;/term&gt;." rows="3"></textarea>
+                </div>
+            </div>
+            <div class="add-hand-modal-actions">
+                <button type="button" class="btn-small btn-secondary" onclick="closeAddHandModal()">Cancel</button>
+                <button type="submit" class="btn-small primary" id="addHandSubmit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function() {
+    function closeAddHandModal() {
+        var modal = document.getElementById('addHandModal');
+        if (modal) modal.style.display = 'none';
+    }
+    function openAddHandModal() {
+        var modal = document.getElementById('addHandModal');
+        var form = document.getElementById('addHandForm');
+        if (modal) modal.style.display = 'flex';
+        if (form) form.reset();
+        var first = document.getElementById('addHandXmlId');
+        if (first) first.focus();
+    }
+    function onAddHandSubmit(e) {
+        e.preventDefault();
+        var hand = {
+            xml_id: (document.getElementById('addHandXmlId') || {}).value || '',
+            scope: (document.getElementById('addHandScope') || {}).value || '',
+            medium: (document.getElementById('addHandMedium') || {}).value || '',
+            scribe: (document.getElementById('addHandScribe') || {}).value || '',
+            locus: (document.getElementById('addHandLocus') || {}).value || '',
+            description: (document.getElementById('addHandDescription') || {}).value || ''
+        };
+        var n = (document.querySelectorAll && (document.querySelectorAll('.hand-card').length + document.querySelectorAll('.hand-panel-card').length)) || 0;
+        hand.xml_id = (hand.xml_id || '').trim().replace(/^#/, '') || ('hand-' + Math.max(1, n + 1));
+        closeAddHandModal();
+        document.dispatchEvent(new CustomEvent('addhand:saved', { detail: { hand: hand } }));
+    }
+    function init() {
+        var modal = document.getElementById('addHandModal');
+        var form = document.getElementById('addHandForm');
+        window.closeAddHandModal = closeAddHandModal;
+        window.openAddHandModal = openAddHandModal;
+        if (form) form.addEventListener('submit', onAddHandSubmit);
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

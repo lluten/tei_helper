@@ -1,15 +1,23 @@
 [
   {
-    "code": "hi",
-    "label": "Highlight3",
+    "code": "tag",
+    "label": "CustomTag",
     "category": "visual",
-    "color": "#fff176",
-    "description": "Visually distinct text.",
+    "color": "#E1BEE7",
+    "description": "Text that is visually distinct.",
+    "attrs": []
+  },
+  {
+    "code": "hi",
+    "label": "HighlightTEst",
+    "category": "visual",
+    "color": "#FFF59D",
+    "description": "Text that is visually distinct.",
     "attrs": [
       {
         "name": "rend",
         "label": "Style",
-        "desc": "italic, bold, underline",
+        "desc": "",
         "suggestions": []
       }
     ]
@@ -18,21 +26,15 @@
     "code": "add",
     "label": "Addition",
     "category": "editorial",
-    "color": "#b2dfdb",
-    "description": "Letters or words inserted in the text.",
-    "attrs": [
-      {
-        "name": "place",
-        "label": "Placement",
-        "desc": "margin, above, below"
-      }
-    ]
+    "color": "#80CBC4",
+    "description": "Letters or words inserted in the text...",
+    "attrs": []
   },
   {
     "code": "del",
     "label": "Deletion",
     "category": "editorial",
-    "color": "#ffcdd2",
+    "color": "#EF9A9A",
     "description": "Text deleted or crossed out in source.",
     "attrs": [
       {
@@ -46,7 +48,7 @@
     "code": "gap",
     "label": "Gap",
     "category": "editorial",
-    "color": "#f5f5f5",
+    "color": "#B0BEC5",
     "description": "Point where material is omitted/illegible.",
     "attrs": [
       {
@@ -60,7 +62,7 @@
     "code": "sic",
     "label": "Sic (Error)",
     "category": "editorial",
-    "color": "#ffe0b2",
+    "color": "#FFCC80",
     "description": "Text reproduced although incorrect.",
     "attrs": []
   },
@@ -68,7 +70,7 @@
     "code": "date",
     "label": "Date",
     "category": "semantic",
-    "color": "#fff9c4",
+    "color": "#FFE082",
     "description": "Contains a date in any format.",
     "attrs": [
       {
@@ -82,7 +84,7 @@
     "code": "persName",
     "label": "Person",
     "category": "semantic",
-    "color": "#b3e5fc",
+    "color": "#81D4FA",
     "description": "Contains a proper noun or noun phrase referring to a person.",
     "attrs": [
       {
@@ -101,7 +103,7 @@
     "code": "placeName",
     "label": "Place",
     "category": "semantic",
-    "color": "#c8e6c9",
+    "color": "#A5D6A7",
     "description": "Contains an absolute or relative name for a place.",
     "attrs": [
       {
@@ -115,7 +117,7 @@
     "code": "lb",
     "label": "Line Break",
     "category": "structural",
-    "color": "#e0e0e0",
+    "color": "#CFD8DC",
     "description": "Marks the start of a new line.",
     "attrs": []
   }

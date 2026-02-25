@@ -2,6 +2,7 @@
 <?xml-model href="https://vault.tei-c.org/P5/current/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0" type="application/xml"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
   <teiHeader>
+    <!-- fileDesc: full bibliographic description of the electronic file -->
     <fileDesc>
       <titleStmt>
         <title>
@@ -9,10 +10,10 @@
         </title>
         <author>
           {author}
-          <date>
-            {date}
-          </date>
         </author>
+        <date>
+          {date}
+        </date>
         <respStmt>
           <resp>
             transcribed by
@@ -69,11 +70,7 @@
               </layout>
             </layoutDesc>
           </objectDesc>
-          <handDesc>
-            <handNote>
-              {handNote}
-            </handNote>
-          </handDesc>
+          {handDesc}
         </physDesc>
         <history>
         <origin/>
@@ -82,10 +79,11 @@
   </msDesc>
 </sourceDesc>
 </fileDesc>
+<!-- encodingDesc: relationship between the electronic text and the source(s) -->
 <encodingDesc>
   <projectDesc>
     <p>
-      Digital Transcription.
+      Digital transcription of the source document.
     </p>
   </projectDesc>
   <editorialDecl>
@@ -93,14 +91,31 @@
       Capital and lowercase letters will be normalized.
     </p>
   </editorialDecl>
+  <samplingDecl>
+    <p>
+      Full transcription of the selected folio(s).
+    </p>
+  </samplingDecl>
 </encodingDesc>
+<!-- profileDesc: bibliographic aspects of the text (language, occasion, people, setting) -->
 <profileDesc>
   <langUsage>
     <p>
       {language}
     </p>
   </langUsage>
+  <textDesc>
+    <channel mode="w">
+      written
+    </channel>
+  </textDesc>
 </profileDesc>
+<!-- revisionDesc: the file's revision history -->
+<revisionDesc>
+  <change when="{date}">
+    Initial transcription created.
+  </change>
+</revisionDesc>
 </teiHeader>
 <text>
   <body>

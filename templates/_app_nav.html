@@ -20,17 +20,6 @@
                     <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                     <span>Editor</span>
                 </a>
-                {% if request.endpoint == 'editor' %}
-                <button type="button" class="app-nav-menu-item app-nav-menu-btn-item" role="menuitem" onclick="var m=document.getElementById('appNavMenu'); if(m) m.classList.remove('show'); if(typeof toggleLigaturePanel==='function') toggleLigaturePanel();">
-                    <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                    <span>Ligatures</span>
-                </button>
-                {% else %}
-                <a href="{{ url_for('editor') }}?ligatures" class="app-nav-menu-item" role="menuitem">
-                    <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                    <span>Ligatures</span>
-                </a>
-                {% endif %}
                 {% endif %}
                 <a href="{{ url_for('doc_info') }}" class="app-nav-menu-item" role="menuitem">
                     <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
@@ -44,9 +33,9 @@
                     <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                     <span>Layout</span>
                 </a>
-                <a href="{{ url_for('privacy') }}" class="app-nav-menu-item" role="menuitem">
+                <a href="{{ url_for('terms') }}" class="app-nav-menu-item" role="menuitem">
                     <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Privacy &amp; terms</span>
+                    <span>Terms</span>
                 </a>
             </div>
             {% if request.endpoint == 'editor' or session.get('pages') %}

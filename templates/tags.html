@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <title>Tag Definitions</title>
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -29,8 +32,11 @@
                 <div class="wizard-step-placeholder"></div>
             </div>
 
-            <form method="POST" id="mainForm" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
+            <form method="POST" action="{{ url_for('tag_manager') }}" id="mainForm" style="display:flex; flex-direction:column; height:100%; overflow:hidden;" onsubmit="document.getElementById('code-submit').value=document.getElementById('inp-code').value; document.getElementById('category-submit').value=document.getElementById('inp-category').value;">
                 <input type="hidden" name="action" id="formAction" value="add">
+                <input type="hidden" name="code" id="code-submit" value="">
+                <input type="hidden" name="category" id="category-submit" value="">
+                <input type="hidden" name="original_code" id="original-code-submit" value="">
                 
                 <div class="wizard-body">
                     
@@ -74,7 +80,7 @@
                         <p class="desc">Fine-tune the display and attributes.</p>
                         <div class="form-grid">
                             <div class="input-wrap"><label>Display Label</label><input type="text" name="label" id="inp-label" required></div>
-                            <div class="input-wrap"><label>XML Tag Name (Code)</label><input type="text" name="code" id="inp-code" required readonly></div>
+                            <div class="input-wrap"><label>XML Tag Name (Code)</label><input type="text" id="inp-code" required></div>
                             <div class="input-wrap full-width"><label>Description</label><input type="text" name="description" id="inp-desc"></div>
                             
                             <div class="input-wrap full-width">
@@ -88,9 +94,9 @@
                                 </table>
                             </div>
 
-                            <div class="input-wrap"><label>Color</label><input type="color" name="color" id="inp-color" value="#e3f2fd" style="height:40px; padding:2px; cursor:pointer;"></div>
+                            <div class="input-wrap"><label>Color</label><input type="color" name="color" id="inp-color" value="#E1BEE7" style="height:40px; padding:2px; cursor:pointer;"></div>
                         </div>
-                        <input type="hidden" name="category" id="inp-category">
+                        <input type="hidden" id="inp-category">
                     </div>
                 </div>
 
@@ -170,9 +176,9 @@
 
             document.getElementById('formAction').value = 'edit';
             document.getElementById('inp-category').value = tag.category;
+            document.getElementById('original-code-submit').value = tag.code;
             
-            document.getElementById('inp-code').value = tag.code;
-            document.getElementById('inp-code').readOnly = true; 
+            document.getElementById('inp-code').value = tag.code; 
             document.getElementById('inp-label').value = tag.label;
             document.getElementById('inp-desc').value = tag.description || '';
             document.getElementById('inp-color').value = tag.color;
@@ -223,7 +229,7 @@
         const TEI_LIBRARY = [
             { code: 'hi', cat: 'visual', label: 'Highlight', desc: 'Text that is visually distinct.', attrs: [{name:'rend', label:'Style'}] },
             { code: 'del', cat: 'editorial', label: 'Deletion', desc: 'Text marked for deletion.', attrs: [{name:'rend', label:'Type'}] },
-            { code: 'add', cat: 'editorial', label: 'Addition', desc: 'Inserted text.', attrs: [{name:'place', label:'Place'}] },
+            { code: 'add', cat: 'editorial', label: 'Addition', desc: 'Inserted text.', attrs: [{name:'place', label:'Place'}, {name:'hand', label:'Hand', desc: 'Reference to hand, e.g. #hand-1'}] },
             { code: 'sic', cat: 'editorial', label: 'Sic', desc: 'Incorrect text.', attrs: [] },
             { code: 'persName', cat: 'semantic', label: 'Person', desc: 'Name of a person.', attrs: [{name:'ref', label:'ID'}, {name:'role', label:'Role'}] },
             { code: 'placeName', cat: 'semantic', label: 'Place', desc: 'Name of a place.', attrs: [{name:'ref', label:'ID'}] },
@@ -233,6 +239,7 @@
         function selectCategory(cat) { 
             document.getElementById('formAction').value = 'add'; 
             document.getElementById('inp-category').value = cat; 
+            document.getElementById('original-code-submit').value = ''; 
             filterLibrary(); 
             nextToStep(2); 
         }
@@ -243,9 +250,11 @@
             const filtered = TEI_LIBRARY.filter(i => i.cat === cat && (i.label.toLowerCase().includes(term) || i.code.includes(term)));
             
             document.getElementById('libraryList').innerHTML = filtered.map(i => {
-                const attrSafe = JSON.stringify(i.attrs).replace(/"/g, '&quot;');
+                const attrSafe = JSON.stringify(i.attrs || []).replace(/"/g, '&quot;');
+                const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const codeEsc = esc(i.code), labelEsc = esc(i.label), descEsc = esc(i.desc);
                 return `
-                <div class="lib-option" onclick="selectDefinition('${i.code}', '${i.label}', '${i.desc}', ${attrSafe})">
+                <div class="lib-option" onclick="selectDefinition('${codeEsc}', '${labelEsc}', '${descEsc}', ${attrSafe})">
                     <div class="lib-main"><span style="font-weight:600;">${i.label}</span><span class="lib-desc">${i.desc}</span></div>
                     <span class="lib-code">&lt;${i.code}&gt;</span>
                 </div>`;
@@ -256,7 +265,7 @@
             document.getElementById('inp-code').value=code; 
             document.getElementById('inp-label').value=label;
             document.getElementById('inp-desc').value=desc;
-            document.getElementById('inp-code').readOnly=true;
+            document.getElementById('original-code-submit').value = '';
             
             document.getElementById('attr-tbody').innerHTML = '';
             if(attrs && attrs.length) attrs.forEach(a => addAttrRow(a.name, a.label));
@@ -266,7 +275,7 @@
 
         function selectCustom() {
             document.getElementById('inp-code').value=''; 
-            document.getElementById('inp-code').readOnly=false;
+            document.getElementById('original-code-submit').value = '';
             document.getElementById('inp-label').value=''; 
             document.getElementById('attr-tbody').innerHTML='';
             nextToStep(3);

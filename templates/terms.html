@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <title>Terms – TEI-edit</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .landing-body.terms-page { align-items: flex-start; padding: 16px 0; }
+        .terms-card { max-width: 720px; text-align: left; padding: 24px 32px; }
+        .terms-card .brand-lg { margin-top: 0; margin-bottom: 8px; font-size: 1.35rem; }
+        .terms-card .subtitle { margin-bottom: 20px; font-size: 0.9rem; color: var(--text-muted, #666); }
+        .terms-card h2 { font-size: 0.95rem; font-weight: 600; margin: 1.2em 0 0.4em; color: var(--accent-color); }
+        .terms-card h2:first-of-type { margin-top: 0; }
+        .terms-card p { margin: 0 0 0.6em; font-size: 0.9rem; line-height: 1.5; }
+    </style>
+</head>
+<body class="page-with-nav">
+    {% include '_app_nav.html' %}
+    <div class="landing-body terms-page">
+        <div class="upload-card terms-card">
+            <span class="brand-lg">Terms</span>
+            <p class="subtitle">Terms of use for this application.</p>
+
+            <h2>1. Local use</h2>
+            <p>TEI-edit runs on your device. No data is sent to or stored on any external server.</p>
+
+            <h2>2. Acceptable use</h2>
+            <p>You must not use the application for illegal purposes. You are responsible for having the necessary rights for the content you work with.</p>
+
+            <h2>3. Disclaimer</h2>
+            <p>The application is provided &ldquo;as is&rdquo; without warranty. We are not liable for loss of data; please keep your own copies of any important content.</p>
+
+            {% if contact_email %}
+            <h2>4. Contact</h2>
+            <p><span id="contact-email-placeholder" data-contact="{{ contact_encoded }}" aria-label="Contact email">…</span></p>
+
+            <h2>5. Changes</h2>
+            {% else %}
+            <h2>4. Changes</h2>
+            {% endif %}
+            <p>We may update this page; continued use after changes constitutes acceptance.</p>
+
+            <p style="margin-top: 1.5em;"><a href="{{ url_for('index') }}">Back to start</a></p>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var el = document.getElementById('contact-email-placeholder');
+        if (!el || !el.dataset.contact) return;
+        try {
+            var parts = atob(el.dataset.contact).split('\0');
+            if (parts.length === 2) {
+                var email = parts[0] + '@' + parts[1];
+                var a = document.createElement('a');
+                a.href = 'mailto:' + email;
+                a.textContent = email;
+                el.parentNode.replaceChild(a, el);
+            }
+        } catch (e) {}
+    })();
+    </script>
+</body>
+</html>

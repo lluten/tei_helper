@@ -10,7 +10,19 @@ From the repo root, with dependencies installed (`pip install -r requirements.tx
 python app.py
 ```
 
-A local window opens; no browser needed.
+A local window opens; no browser needed. Use this for day-to-day testing — no need to push or build on GitHub.
+
+## Test the built executable locally
+
+To test the same kind of binary that gets shipped in a release (e.g. before you push a tag):
+
+```bash
+pip install -r requirements.txt
+pip install pyinstaller
+pyinstaller app.spec
+```
+
+Then run the output: `./dist/TEI-edit` (macOS/Linux) or `dist\TEI-edit.exe` (Windows). This uses the same `app.spec` as the GitHub workflow.
 
 ## Build executables (PyInstaller)
 

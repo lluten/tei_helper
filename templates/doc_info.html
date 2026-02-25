@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <title>Document Metadata</title>
     <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -14,8 +17,15 @@
         .doc-info-card .section-title:first-of-type { margin-top: 0; }
         .doc-info-card .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 14px; margin-top: 8px; }
         .doc-info-card .input-wrap label { margin-bottom: 3px; font-size: 0.7rem; }
-        .doc-info-card .input-wrap input { padding: 6px 8px; font-size: 0.9rem; }
+        .doc-info-card .input-wrap input, .doc-info-card .input-wrap select { padding: 6px 8px; font-size: 0.9rem; }
+        .doc-info-card .input-wrap textarea { padding: 6px 8px; font-size: 0.9rem; min-height: 60px; resize: vertical; width: 100%; box-sizing: border-box; }
         .doc-info-card .form-actions { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; }
+        .doc-info-hand-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .doc-info-hand-item { display: flex; align-items: center; gap: 8px; }
+        .doc-info-hand-item .hand-panel-card { flex: 1; margin: 0; }
+        .doc-info-hand-remove { flex-shrink: 0; padding: 4px 10px; font-size: 0.75rem; background: none; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--danger-color, #c62828); }
+        .doc-info-hand-remove:hover { background: var(--danger-bg, #ffebee); }
+        .hand-desc-hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
     </style>
 </head>
 <body class="page-with-nav">
@@ -30,7 +40,7 @@
                 <div class="meta-grid">
                     <div class="input-wrap">
                         <label>Document Title</label>
-                        <input type="text" name="title" value="{{ meta.get('title', '') }}" placeholder="e.g. Letter to X" required>
+                        <input type="text" name="title" value="{{ meta.get('title', '') }}" placeholder="e.g. Letter to X">
                     </div>
                     <div class="input-wrap">
                         <label>Author</label>
@@ -77,21 +87,91 @@
                         <input type="text" name="objectType" value="{{ meta.get('objectType', '') }}" placeholder="e.g. Codex, Letter">
                     </div>
                     <div class="input-wrap">
-                        <label>Script Type</label>
-                        <input type="text" name="handNote" value="{{ meta.get('handNote', '') }}" placeholder="e.g. Kurrent">
-                    </div>
-                    <div class="input-wrap">
                         <label>Language</label>
                         <input type="text" name="language" value="{{ meta.get('language', '') }}" placeholder="e.g. German">
                     </div>
                 </div>
 
+                <div class="section-title">4. Hand Descriptions (TEI handDesc / handNote)</div>
+                <p class="hand-desc-hint">Define one or more hands for the manuscript. Use <code>xml:id</code> to reference hands elsewhere (e.g. <code>&lt;add hand="#hand-1"&gt;</code>). Add hands with the button below; edit or remove from the list as needed.</p>
+                <div class="doc-info-hand-list" id="handList"></div>
+                <button type="button" class="hand-panel-add-btn btn-small" id="btnAddHand" style="margin-top: 8px;">+ Add hand</button>
+                <input type="hidden" name="hands" id="handsInput" value="">
+
                 <div class="form-actions">
                     <a href="{{ url_for('editor') }}" class="btn-secondary">Skip / Edit Later</a>
-                    <button type="submit" class="primary">Save & Continue to Editor &rarr;</button>
+                    <button type="submit" class="primary" id="btnSubmit">Save & Continue to Editor &rarr;</button>
                 </div>
             </form>
         </div>
     </div>
+    {% include '_add_hand_modal.html' %}
+    <script>
+        (function() {
+            const handList = document.getElementById('handList');
+            const handsInput = document.getElementById('handsInput');
+            const btnAddHand = document.getElementById('btnAddHand');
+            const form = document.querySelector('form');
+            const HAND_PALETTE = ['#BBDEFB', '#C8E6C9', '#F8BBD9', '#D1C4E9', '#FFCCBC', '#B2DFDB', '#FFECB3', '#CFD8DC'];
+
+            let hands = {{ (meta.get('hands') or []) | tojson | safe }};
+            if (!Array.isArray(hands)) hands = [];
+
+            function escapeHtml(s) {
+                if (s == null) return '';
+                var div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+
+            function renderHandList() {
+                if (!handList) return;
+                if (hands.length === 0) {
+                    handList.innerHTML = '<p class="hand-panel-empty" style="margin:0; font-size:0.9rem; color: var(--text-muted);">No hands defined. Click “+ Add hand” to add one.</p>';
+                    return;
+                }
+                handList.innerHTML = hands.map(function(h, i) {
+                    var id = (h.xml_id || '').toString().replace(/^#/, '') || ('hand-' + (i + 1));
+                    var scribe = (h.scribe || '').toString().trim();
+                    var desc = (h.description || '').toString().trim();
+                    var label = scribe ? (id + ' — ' + scribe) : id;
+                    var color = HAND_PALETTE[i % HAND_PALETTE.length];
+                    return '<div class="doc-info-hand-item" data-index="' + i + '">' +
+                        '<div class="hand-panel-card" style="--hand-color: ' + color + '">' +
+                        '<span class="hand-panel-card-id">' + escapeHtml(label) + '</span>' +
+                        (desc ? '<span class="hand-panel-card-desc">' + escapeHtml(desc.length > 120 ? desc.slice(0, 120) + '…' : desc) + '</span>' : '') +
+                        '</div>' +
+                        '<button type="button" class="doc-info-hand-remove" data-index="' + i + '">Remove</button>' +
+                        '</div>';
+                }).join('');
+                handList.querySelectorAll('.doc-info-hand-remove').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var idx = parseInt(btn.dataset.index, 10);
+                        if (idx >= 0 && idx < hands.length) {
+                            hands.splice(idx, 1);
+                            renderHandList();
+                        }
+                    });
+                });
+            }
+
+            btnAddHand.addEventListener('click', function() {
+                if (typeof openAddHandModal === 'function') openAddHandModal();
+            });
+
+            document.addEventListener('addhand:saved', function(e) {
+                var hand = e.detail && e.detail.hand;
+                if (!hand) return;
+                hands.push(hand);
+                renderHandList();
+            });
+
+            form.addEventListener('submit', function() {
+                handsInput.value = JSON.stringify(hands);
+            });
+
+            renderHandList();
+        })();
+    </script>
 </body>
 </html>
