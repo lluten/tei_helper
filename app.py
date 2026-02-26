@@ -72,8 +72,6 @@ def save_tags(tags):
     with open(TAGS_FILE, 'w') as f:
         json.dump(tags, f, indent=2)
 
-# TEI header: fileDesc (bibliographic description), encodingDesc (e-text vs source),
-# profileDesc (language, occasion, people, setting), revisionDesc (revision history).
 TEI_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 <?xml-model href="https://vault.tei-c.org/P5/current/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0" type="application/xml"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
@@ -531,17 +529,15 @@ def index():
     return render_template('index.html')
 
 def parse_tei_import(tree):
-    """Extracts metadata and content from an existing TEI file to allow re-editing."""
+    """Extract metadata and body content from an existing TEI file for re-editing."""
     ns = {'t': 'http://www.tei-c.org/ns/1.0'}
-    
-    # 1. Extract Metadata for Header
     meta = {}
     def get_text(xpath):
         res = tree.xpath(xpath, namespaces=ns)
         return res[0].text if res and res[0].text else ""
-    
+
     meta['title'] = get_text('//t:titleStmt/t:title')
-    meta['author'] = get_text('//t:titleStmt/t:author') # Careful: author might contain date node
+    meta['author'] = get_text('//t:titleStmt/t:author')
     meta['date'] = get_text('//t:titleStmt/t:author/t:date')
     meta['transcriber'] = get_text('//t:respStmt/t:name')
     meta['country'] = get_text('//t:msIdentifier/t:country')
@@ -557,42 +553,19 @@ def parse_tei_import(tree):
 
     session['doc_meta'] = meta
 
-    # 2. Extract Body Content (Lines)
-    # We look for <lb> tags and split content.
-    # Note: To preserve tags like <persName>, we need to handle XML-to-HTML conversion.
-    
-    # Strategy: Dump the body to string, split by <lb>, then parse fragments to HTML spans
     body = tree.xpath('//t:body/t:div', namespaces=ns)
-    if not body: body = tree.xpath('//t:body', namespaces=ns)
-    
+    if not body:
+        body = tree.xpath('//t:body', namespaces=ns)
     lines_data = []
-    
     if body:
-        # Get full XML string of body content
         body_xml = etree.tostring(body[0], encoding='unicode')
-        
-        # Remove the outer div/body tag to get inner content
         body_xml = re.sub(r'^<[^>]+>', '', body_xml)
         body_xml = re.sub(r'</[^>]+>$', '', body_xml)
-        
-        # Split by <lb ... />
-        # We try to preserve 'points' if we saved them previously
         raw_lines = re.split(r'<lb[^>]*>', body_xml)
-        
-        # Find points attributes in the split delimiters (complex via regex split, simplified here)
-        # For this version, we accept that re-imported TEI might lose precise Image Alignment
-        # unless we parse it strictly node-by-node. 
-        # To keep "Edit Existing" working for text + tags:
-        
         for i, line_content in enumerate(raw_lines):
-            if not line_content.strip(): continue
-            
-            # Convert TEI tags back to Editor HTML Spans
-            # e.g. <persName ref="x">Name</persName> -> <span class="tei-tag tag-persName" data-tag="persName" data-attr-ref="x">Name</span>
-            
-            # Simple Regex replacement for common tags (robust approach would be XSLT)
-            # We replace <tag attrs>content</tag> with <span ...>content</span>
-            
+            if not line_content.strip():
+                continue
+
             def tag_replacer(match):
                 tag = match.group(1)
                 attrs = match.group(2)
@@ -604,7 +577,6 @@ def parse_tei_import(tree):
                     attr_str += f' data-attr-{k}="{v}"'
                 return f'<span class="tei-tag tag-{tag}{extra_class}" data-tag="{tag}"{attr_str}>{content}</span>'
 
-            # Empty/milestone elements (e.g. handShift)
             hand_shift = re.search(r'<handShift\s+new="([^"]*)"\s*/?\s*>', line_content)
             if hand_shift:
                 line_content = re.sub(
@@ -612,19 +584,14 @@ def parse_tei_import(tree):
                     r'<span class="tei-tag handShift-milestone" data-tag="handShift" data-attr-new="\1" contenteditable="false">¶</span>',
                     line_content,
                 )
-            # Regex for simple nested tags
             html_line = re.sub(r'<(\w+)([^>]*)>(.*?)</\1>', tag_replacer, line_content)
-            
-            # Strip remaining namespaces or unwanted formatting
             html_line = html_line.replace('xmlns="http://www.tei-c.org/ns/1.0"', '')
-            
             text_only = re.sub(r'<[^>]+>', '', line_content).strip()
-            
             lines_data.append({
                 'id': i,
                 'text': text_only,
-                'html': html_line.strip(), # Pass HTML to editor
-                'points': "" # Lost on TEI import currently
+                'html': html_line.strip(),
+                'points': ''
             })
             
         session['imported_lines'] = lines_data
@@ -966,9 +933,6 @@ def privacy():
 
 @app.route('/tags', methods=['GET', 'POST'])
 def tag_manager():
-    # ... [Keep your existing tag_manager logic] ...
-    # Copy/Paste the logic from the previous turn here if needed
-    # For brevity, I assume this remains unchanged
     current_tags = load_tags()
     if request.method == 'POST':
         action = (request.form.get('action') or '').strip()
@@ -1046,67 +1010,6 @@ def export_layout_reset():
     return redirect(url_for('export_layout'))
 
 TEI_NS = 'http://www.tei-c.org/ns/1.0'
-XML_NS = 'http://www.w3.org/XML/1998/namespace'
-
-
-def merge_transkribus_pages_to_tei(pages):
-    """Stitch multiple Transkribus-style pages into a single well-formed TEI XML document.
-
-    Args:
-        pages: List of page objects in sequential order. Each must have:
-            - text (str): Raw transcribed text for that page
-            - imageUrl (str): URL of the page image (e.g. Transkribus)
-            - pageNumber (str): Page/folio identifier (e.g. "1", "2", "1r")
-
-    Returns:
-        str: Full TEI XML document as string (UTF-8, with declaration).
-    """
-    ns = TEI_NS
-    nsmap = {None: ns}
-    root = etree.Element(f'{{{ns}}}TEI', nsmap=nsmap)
-
-    # Minimal teiHeader
-    header = etree.SubElement(root, f'{{{ns}}}teiHeader')
-    filedesc = etree.SubElement(header, f'{{{ns}}}fileDesc')
-    titlestmt = etree.SubElement(filedesc, f'{{{ns}}}titleStmt')
-    etree.SubElement(titlestmt, f'{{{ns}}}title').text = 'Transcription'
-    etree.SubElement(filedesc, f'{{{ns}}}publicationStmt')
-    pub = filedesc.find(f'{{{ns}}}publicationStmt')
-    etree.SubElement(pub, f'{{{ns}}}p').text = 'Merged from Transkribus.'
-    sourcedesc = etree.SubElement(filedesc, f'{{{ns}}}sourceDesc')
-    etree.SubElement(sourcedesc, f'{{{ns}}}p').text = 'Transkribus export.'
-
-    # Facsimile block: one surface per page
-    facs = etree.SubElement(root, f'{{{ns}}}facsimile')
-    for i, page in enumerate(pages):
-        page_number = str(page.get('pageNumber') or (i + 1))
-        surface_id = f'facs_page_{i + 1}'
-        surface = etree.SubElement(facs, f'{{{ns}}}surface')
-        surface.set(f'{{{XML_NS}}}id', surface_id)
-        graphic = etree.SubElement(surface, f'{{{ns}}}graphic')
-        graphic.set('url', str(page.get('imageUrl') or '').strip())
-
-    # text / body / div: pb milestones and page text
-    text_el = etree.SubElement(root, f'{{{ns}}}text')
-    body = etree.SubElement(text_el, f'{{{ns}}}body')
-    div = etree.SubElement(body, f'{{{ns}}}div')
-
-    for i, page in enumerate(pages):
-        page_number = str(page.get('pageNumber') or (i + 1))
-        surface_id = f'facs_page_{i + 1}'
-        pb = etree.SubElement(div, f'{{{ns}}}pb')
-        pb.set('n', page_number)
-        pb.set('facs', '#' + surface_id)
-        raw = page.get('text') or ''
-        pb.tail = raw if isinstance(raw, str) else str(raw)
-
-    return etree.tostring(
-        root,
-        xml_declaration=True,
-        encoding='UTF-8',
-        pretty_print=True,
-        method='xml'
-    ).decode('UTF-8')
 
 
 def _xml_escape_text(s):

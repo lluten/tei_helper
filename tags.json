@@ -9,7 +9,7 @@
   },
   {
     "code": "hi",
-    "label": "HighlightTEst",
+    "label": "Highlight",
     "category": "visual",
     "color": "#FFF59D",
     "description": "Text that is visually distinct.",
