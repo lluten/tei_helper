@@ -66,15 +66,24 @@ jobs:
           path: release
           merge-multiple: true
 
+      - name: Prepare release assets
+        run: |
+          mkdir -p release_assets
+          find release -type f -name 'TEI-edit-Windows.exe' -exec cp {} release_assets/ \;
+          find release -type f -name 'TEI-edit-macOS' -exec cp {} release_assets/ \;
+          find release -type f -name 'TEI-edit-Linux' -exec cp {} release_assets/ \;
+          ls -la release_assets/
+          test -f release_assets/TEI-edit-Windows.exe && test -f release_assets/TEI-edit-macOS && test -f release_assets/TEI-edit-Linux
+
       - name: Create release and attach builds
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           files: |
-            release/TEI-edit-Windows.exe
-            release/TEI-edit-macOS
-            release/TEI-edit-Linux
+            release_assets/TEI-edit-Windows.exe
+            release_assets/TEI-edit-macOS
+            release_assets/TEI-edit-Linux
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
