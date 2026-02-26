@@ -72,9 +72,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           files: |
-            release/dist/TEI-edit-Windows.exe
-            release/dist/TEI-edit-macOS
-            release/dist/TEI-edit-Linux
+            release/TEI-edit-Windows.exe
+            release/TEI-edit-macOS
+            release/TEI-edit-Linux
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
