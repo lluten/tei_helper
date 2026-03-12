@@ -1,0 +1,695 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Codex Sangallensis 238</title>
+        <author>Isidore of Seville (Author) / Winithar (Scribe and Compiler)</author>
+        <date notBefore="0760" notAfter="0764">c. 760-764</date>
+        <respStmt>
+          <resp>transcribed by</resp>
+          <name>Jonathan Lautenschlager</name>
+        </respStmt>
+        <respStmt>
+          <resp>validated by</resp>
+          <name>TEI-edit</name>
+        </respStmt>
+      </titleStmt>
+      <publicationStmt>
+        <p>Transcribed using TEI-edit.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <msDesc>
+          <msIdentifier>
+            <country>Switzerland</country>
+            <settlement>St. Gallen</settlement>
+            <repository>Stiftsbibliothek</repository>
+            <idno>Cod. Sang. 238</idno>
+          </msIdentifier>
+          <physDesc>
+            <objectDesc>
+              <supportDesc>
+                <support>
+                  <material>Parchment</material>
+                  <objectType>Codex</objectType>
+                </support>
+              </supportDesc>
+            </objectDesc>
+            <handDesc>
+              <handNote xml:id="winithar-brown" scope="major" medium="brown-ink" scribe="Winithar">Main
+                text copied by the scribe Winithar in dark brown ink. The script is an
+                idiosyncratic, early form of &lt;term ref="#alemannic-minuscule"&gt;Alemannic
+                minuscule&lt;/term&gt;, exhibiting a heavy, slightly uncalligraphic
+                &lt;term&gt;ductus&lt;/term&gt;. Diagnostic features include the frequent use of the
+                open &lt;term&gt;cc-a&lt;/term&gt;, fractured or clubbed
+                &lt;term&gt;minims&lt;/term&gt;, and the distinctive downward-sweeping crossbar of
+                the letter t.</handNote>
+              <handNote xml:id="winithar-orange" scope="minor" medium="orange-ink" scribe="Winithar">Rubrications,
+                incipits, and highlighted initials executed by Winithar in a distinctive orange (or
+                reddish-orange) ink . The morphological features of the script remain identical to
+                &lt;ref target="#winithar-brown"&gt;his main text hand&lt;/ref&gt;, confirming that
+                the change in medium is purely for structural and navigational emphasis within the
+                codex rather than a change in scribe.</handNote>
+            </handDesc>
+          </physDesc>
+          <history>
+            <origin>
+              <p>Written at the Abbey of St. Gall by the monk and scribe Winithar. Dated to <origDate
+                  notBefore="0760" notAfter="0764">c. 760-764</origDate> based on paleographical
+                evidence and Winithar's known period of activity.</p>
+            </origin>
+            <provenance>
+              <p>The manuscript is indigenous to St. Gall. It has remained in the continuous
+                possession of the <orgName>Stiftsbibliothek St. Gallen</orgName> (Abbey Library of
+                St. Gall) since its creation in the eighth century.</p>
+            </provenance>
+          </history>
+        </msDesc>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <projectDesc>
+        <p>Digital transcription of the source document.</p>
+      </projectDesc>
+      <editorialDecl>
+        <p>Capital and lowercase letters will be normalized.</p>
+      </editorialDecl>
+      <samplingDecl>
+        <p>Full transcription of the selected folio(s).</p>
+      </samplingDecl>
+    </encodingDesc>
+    <profileDesc>
+      <langUsage>
+        <p>Latin</p>
+      </langUsage>
+      <textDesc>
+        <channel mode="w">written</channel>
+      </textDesc>
+    </profileDesc>
+    <revisionDesc>
+      <change when="c. 760-764">Initial transcription created.</change>
+    </revisionDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div type="edition"><pb n="1" /><lb />dehinc reuerteris ad ‧ iiii ‧ <choice>
+          <abbr>kl</abbr>
+          <expan>kalendas</expan>
+        </choice> <choice>
+          <abbr>septe̅bris</abbr>
+          <expan>septembris</expan>
+        </choice><lb />taliq; racione complen<seg type="ligature">
+        tu</seg>r dies ‧ ccc lx ‧<lb /> duodecim <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> <choice>
+          <abbr>m̅siu̅</abbr>
+          <expan>mensium</expan>
+        </choice> ‧ <choice>
+          <abbr>egipcioru̅</abbr>
+          <expan>egipciorum</expan>
+        </choice> ‧ v ‧ dies <choice>
+          <abbr>suꝑsunt</abbr>
+          <expan>supersunt</expan>
+        </choice>
+<lb /> quos ‧ <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> p<seg type="ligature">ag</seg>o m<seg type="ligature">
+        en</seg>es ‧ uel <choice>
+          <abbr>int̅caleres</abbr>
+          <expan>intercaleres</expan>
+        </choice> siue <lb /> aditos ‧ <choice>
+          <abbr>uocauer̅</abbr>
+          <expan>uocauerunt</expan>
+        </choice>, dequib; supe<seg type="ligature">ri</seg>us <choice>
+          <abbr>memoratu̅</abbr>
+          <expan>memoratum</expan>
+        </choice> <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice>; <lb />
+<seg hand="#winithar-orange">v ‧ de concordia
+        mensium</seg>
+<lb />
+<hi rend="initial large orange" hand="#winithar-orange">J</hi>anu<seg
+          type="ligature">ari</seg>us <choice>
+          <abbr>cu̅</abbr>
+          <expan>cum</expan>
+        </choice> <choice>
+          <abbr>dece̅brio</abbr>
+          <expan>decembrio</expan>
+        </choice> in <choice>
+          <abbr>horaru̅</abbr>
+          <expan>horarum</expan>
+        </choice> <choice>
+          <abbr>m̅sura</abbr>
+          <expan>mensura</expan>
+        </choice>
+<lb /> concordat; feb<seg type="ligature">ru</seg>a<seg
+          type="ligature">ri</seg>us <choice>
+          <abbr>cu̅</abbr>
+          <expan>cum</expan>
+        </choice> <choice>
+          <abbr>noue̅brio</abbr>
+          <expan>nouembrio</expan>
+        </choice> ‧ <lb /><choice>
+          <abbr>ęquale</abbr>
+          <expan>aequale</expan>
+        </choice> sumat; marcius <choice>
+          <abbr>ↄsentit</abbr>
+          <expan>consentit</expan>
+        </choice> ‧ oc<seg type="ligature">ti</seg>m<lb /> b<seg
+          type="ligature">ri</seg>o; <pb n="2" /><lb />kora <lb /> aperilis ‧ <choice>
+          <abbr>ęquat</abbr>
+          <expan>aequat</expan>
+        </choice> sep<seg type="ligature">ti</seg>mb<seg
+          type="ligature">ri</seg>o ; maius <lb /> respondit agusto ; junius <choice>
+          <abbr>ↄpar</abbr>
+          <expan>compar</expan>
+        </choice> ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> iu<seg type="ligature">li</seg>o ;<lb /><seg
+          hand="#winithar-orange">vi ‧ de annis ;</seg><lb />
+<hi rend="initial large orange"
+          hand="#winithar-orange">A</hi>nnus ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> circuitus so<seg type="ligature">li</seg>s ‧ ac
+        reditus per<lb /> duodecim <choice>
+          <abbr>m̅nses</abbr>
+          <expan>menses</expan>
+        </choice> ‧ cuius <choice>
+          <abbr>quide̅</abbr>
+          <expan>quidem</expan>
+        </choice> nomen<lb /> figura<seg type="ligature">te</seg> ‧
+        si<seg type="ligature">gn</seg>ificat ‧ <choice>
+          <abbr>o̅ne</abbr>
+          <expan>omne</expan>
+        </choice> <choice>
+          <abbr>te̅pus</abbr>
+          <expan>tempus</expan>
+        </choice> ‧ <choice>
+          <abbr>uitę</abbr>
+          <expan>uitae</expan>
+        </choice><lb /> huius sicut <choice>
+          <abbr>ꝑ</abbr>
+          <expan>per</expan>
+        </choice> <choice>
+          <abbr>isaia̅</abbr>
+          <expan>isaiam</expan>
+        </choice> dicitur , <choice>
+          <abbr>p̅dicate</abbr>
+          <expan>praedicate</expan>
+        </choice> <choice>
+          <abbr>annu̅</abbr>
+          <expan>annum</expan>
+        </choice><lb />
+<choice>
+          <abbr>dn̅i</abbr>
+          <expan>domini</expan>
+        </choice> ‧ <choice>
+          <abbr>acceptabile̅</abbr>
+          <expan>acceptabilem</expan>
+        </choice> ‧ <choice>
+          <abbr>qnm̅</abbr>
+          <expan>quoniam</expan>
+        </choice> <choice>
+          <abbr>n̅</abbr>
+          <expan>non</expan>
+        </choice> ille quo <choice>
+          <abbr>dm̅s</abbr>
+          <expan>dominus</expan>
+        </choice> <choice>
+          <abbr>p̅di</abbr>
+          <expan>praedicare</expan>
+        </choice><lb /> cauit solus fuit accep<seg
+          type="ligature">ta</seg>biles ‧ sed <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> to<seg type="ligature">tu</seg>m <lb /> hoc <choice>
+          <abbr>te̅pus</abbr>
+          <expan>tempus</expan>
+        </choice> iux<seg type="ligature">ta</seg> <choice>
+          <abbr>qd̅</abbr>
+          <expan>quod</expan>
+        </choice> apostolus ait ‧ ;<lb />ecce nunc <choice>
+          <abbr>te̅pus</abbr>
+          <expan>tempus</expan>
+        </choice> acc<seg type="ligature">ep</seg>tabile ‧ ; <choice>
+          <abbr>fine̅</abbr>
+          <expan>finem</expan>
+        </choice> dinique<lb /> huius anni <choice>
+          <abbr>die̅</abbr>
+          <expan>diem</expan>
+        </choice> iudicii ‧ adiunxit ‧ dicens ‧<lb />
+<choice>
+          <abbr>p̅dicare</abbr>
+          <expan>praedicare</expan>
+        </choice> <choice>
+          <abbr>annu̅</abbr>
+          <expan>annum</expan>
+        </choice> <choice>
+          <abbr>dn̅i</abbr>
+          <expan>domini</expan>
+        </choice> <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> <choice>
+          <abbr>die̅</abbr>
+          <expan>diem</expan>
+        </choice> <choice>
+          <abbr>r&amp;ribucionis</abbr>
+          <expan>retributionis</expan>
+        </choice> ;<lb /><choice>
+          <abbr>annu̅</abbr>
+          <expan>annum</expan>
+        </choice> <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> ‧ quasi <choice>
+          <abbr>anu̅</abbr>
+          <expan>anum</expan>
+        </choice> dici <choice>
+          <abbr>quida̅</abbr>
+          <expan>quidam</expan>
+        </choice> putant ‧<lb />id ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> <choice>
+          <abbr>circulu̅</abbr>
+          <expan>circulum</expan>
+        </choice> ‧ unde <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> anuli dic<seg type="ligature">ti</seg> sunt dem<seg
+          type="ligature">en</seg><seg type="ligature">ti</seg>ue ;<lb /><choice>
+          <abbr>principiu̅</abbr>
+          <expan>principium</expan>
+        </choice> ‧ <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> anni ‧ a<seg type="ligature">li</seg>i a broma <add>
+        putant</add> aut po<lb />pu<seg type="ligature">li</seg> romani ; a<seg type="ligature">li</seg>i
+        ab <choice>
+          <abbr>ęquinoccio</abbr>
+          <expan>aequinoccio</expan>
+        </choice> uerno ;<lb /> ut hebrei ; a<seg
+          type="ligature">li</seg>i ‧ a so<seg type="ligature">li</seg>s<seg type="ligature">ti</seg>cio
+        ut greci ;<lb /> a<seg type="ligature">li</seg>i ab <choice>
+          <abbr>autu̅no</abbr>
+          <expan>autumno</expan>
+        </choice> ut <choice>
+          <abbr>ęgipcii</abbr>
+          <expan>aegipcii</expan>
+        </choice> ;<lb /><choice>
+          <abbr>annu̅</abbr>
+          <expan>annum</expan>
+        </choice> <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> sapientes <choice>
+          <abbr>dixer̅</abbr>
+          <expan>dixerunt</expan>
+        </choice> <choice>
+          <abbr>parte̅</abbr>
+          <expan>partem</expan>
+        </choice> <choice>
+          <abbr>cibile̅</abbr>
+          <expan>cibilem</expan>
+        </choice><lb />
+<choice>
+          <abbr>parte̅</abbr>
+          <expan>partem</expan>
+        </choice> <choice>
+          <abbr>naturale̅</abbr>
+          <expan>naturalem</expan>
+        </choice> ‧ patim <choice>
+          <abbr>magnu̅</abbr>
+          <expan>magnum</expan>
+        </choice> <choice>
+          <abbr>e̅e</abbr>
+          <expan>esse</expan>
+        </choice> <choice>
+          <abbr>dixer̅</abbr>
+          <expan>dixerunt</expan>
+        </choice><lb /> Cuilis annus ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> qui ‧ in unius as<seg type="ligature">tri</seg>
+        recursu<lb /><choice>
+          <abbr>ꝑ</abbr>
+          <expan>per</expan>
+        </choice> <choice>
+          <abbr>duodece̅</abbr>
+          <expan>duodecem</expan>
+        </choice> <choice>
+          <abbr>m̅ses</abbr>
+          <expan>menses</expan>
+        </choice> <seg type="ligature">es</seg> terminatur ; annus <lb />
+        natura<seg type="ligature">li</seg>s <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> <choice>
+          <abbr>cu̅</abbr>
+          <expan>cum</expan>
+        </choice> se so<seg type="ligature">li</seg> ‧ luna ‧ supponit ‧<lb />
+        ut ‧ <choice>
+          <abbr>int̅</abbr>
+          <expan>inter</expan>
+        </choice> ‧ o<seg type="ligature">rb</seg>e̅ solis <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> oculos <choice>
+          <abbr>nr̅os</abbr>
+          <expan>nostros</expan>
+        </choice> ‧ media<lb /> facta ‧ t<seg type="ligature">en</seg>ebras ‧ tocius
+        orbis efficiat ‧<pb n="3" /><lb />ro<lb /> quod dici<seg type="ligature">tu</seg>r ‧
+        eclipsis ‧ cuius <seg type="ligature">ra</seg>cio deucius <lb /> obscura fuit ; sed amelesio <choice>
+          <abbr>quoda̅</abbr>
+          <expan>quodam</expan>
+        </choice> filisofo<lb />
+<seg type="ligature">ex</seg>posi<seg
+          type="ligature">ta</seg> <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> ; annus ma<seg type="ligature">gn</seg>us dicitur quan<lb />
+        do <choice>
+          <abbr>o̅nia</abbr>
+          <expan>omnia</expan>
+        </choice> sidera cer<seg type="ligature">ti</seg>s <choice>
+          <abbr>te̅poribus</abbr>
+          <expan>temporibus</expan>
+        </choice> numeris <lb />q; <choice>
+          <abbr>ↄpl&amp;is</abbr>
+          <expan>completis</expan>
+        </choice> ad <choice>
+          <abbr>suu̅</abbr>
+          <expan>suum</expan>
+        </choice> <choice>
+          <abbr>locu̅</abbr>
+          <expan>locum</expan>
+        </choice> ‧ uel <choice>
+          <abbr>ordine̅</abbr>
+          <expan>ordinem</expan>
+        </choice> reuer<seg type="ligature">tu</seg>n<lb />
+<seg
+          type="ligature">tu</seg>r ‧ <choice>
+          <abbr>que̅</abbr>
+          <expan>quem</expan>
+        </choice> <choice>
+          <abbr>annu̅</abbr>
+          <expan>annum</expan>
+        </choice> ‧ <seg type="ligature">an</seg><seg type="ligature">
+        ti</seg>qui ‧ inde uicissimo<lb /> anno fini<seg type="ligature">re</seg> ‧ uel imp<seg
+          type="ligature">le</seg><seg type="ligature">ri</seg>n <choice>
+          <abbr>dixer̅</abbr>
+          <expan>dixterunt</expan>
+        </choice> ;<lb />sols<seg type="ligature">ti</seg>cialis
+        annus ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> <choice>
+          <abbr>cu̅</abbr>
+          <expan>cum</expan>
+        </choice> sol ‧ <choice>
+          <abbr>expl&amp;o</abbr>
+          <expan>expleto</expan>
+        </choice> <choice>
+          <abbr>ꝑ</abbr>
+          <expan>per</expan>
+        </choice> <choice>
+          <abbr>o̅nia</abbr>
+          <expan>omnia</expan>
+        </choice><lb /> si<seg type="ligature">gn</seg>a circuitu ‧ in
+        id ‧ unde cu<seg type="ligature">rs</seg>us sui sumit<lb /> recur<seg type="ligature">ri</seg>t
+        ‧ ipse <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> sola<seg type="ligature">ri</seg>s annus u<seg
+          type="ligature">el</seg> ciui<seg type="ligature">le</seg>s <lb /> qui dieb; ccclxv <choice>
+          <abbr>ꝑagitur</abbr>
+          <expan>peragitur</expan>
+        </choice> ; annus luna<seg type="ligature">ri</seg>s <lb />
+        idem ‧ <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> cumunis <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> qui duodecim <choice>
+          <abbr>m̅nses</abbr>
+          <expan>menses</expan>
+        </choice> luna <lb /> res ‧ decurrit id ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> dieb; cccliiii ;<lb /> annus ‧ embo<seg
+          type="ligature">li</seg>smus<add> e̅ </add>qui <seg type="ligature">lu</seg>nas <seg
+          type="ligature">tr</seg>edecim<lb /><choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> dies ‧ ccclxxiiii habere in quo anno<lb /> lon<seg
+          type="ligature">gi</seg>us dies p<seg type="ligature">as</seg>calis pro<seg
+          type="ligature">te</seg>ndi<seg type="ligature">tu</seg>r ;<lb />annus bissex<seg
+          type="ligature">ti</seg>lis ‧ <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> ‧ in quo unius diei per<lb /><choice>
+          <abbr>quadrienniu̅</abbr>
+          <expan>quadriennium</expan>
+        </choice> ‧ <seg type="ligature">ex</seg> qua<seg
+          type="ligature">tr</seg>antis racione<lb />
+<choice>
+          <abbr>su̅ma</abbr>
+          <expan>summa</expan>
+        </choice> coll<seg type="ligature">eg</seg>itur ; annus
+        iubelius <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice><lb /> remissionis qui septmis <choice>
+          <abbr>annoru̅</abbr>
+          <expan>annorum</expan>
+        </choice> ‧ ebdo<lb /> madib; id est ‧ <choice>
+          <abbr>quadragintanoue̅</abbr>
+          <expan>quadragintanouem</expan>
+        </choice> . annis<lb /> t<seg type="ligature">eg</seg>itur
+        . in quo iuxta <choice>
+          <abbr>lege̅</abbr>
+          <expan>legem</expan>
+        </choice> clangebantur <lb /> tubae <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> ad ‧ <choice>
+          <abbr>o̅nes</abbr>
+          <expan>omnes</expan>
+        </choice> reuertebantur<lb />an<seg type="ligature">ti</seg>qua
+        possesio <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> <choice>
+          <abbr>ↄgregabantur</abbr>
+          <expan>congrebantur</expan>
+        </choice> <choice>
+          <abbr>o̅nes</abbr>
+          <expan>omnes</expan>
+        </choice>
+<lb /> populi in <choice>
+          <abbr>hierusale̅</abbr>
+          <expan>hierusalem</expan>
+        </choice> ut audiren <choice>
+          <abbr>p̅cepta</abbr>
+          <expan>precepta</expan>
+        </choice>
+<lb />
+<choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> le<seg type="ligature">gi</seg>tima ; O<seg
+          type="ligature">li</seg>mpias uero <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> aput gre <lb /> cos. <pb n="4" /><lb /> tar<lb />
+        annus qu<seg type="ligature">ar</seg>tus ‧ o<seg type="ligature">li</seg>mpio ‧ agone <choice>
+          <abbr>q;</abbr>
+          <expan>qui</expan>
+        </choice> uenit <lb />
+<seg type="ligature">tr</seg>ans ‧ ac<seg
+          type="ligature">ti</seg>s annis ‧ iiii ‧ in <choice>
+          <abbr>quib;</abbr>
+          <expan>quibus</expan>
+        </choice> atonis t<seg type="ligature">em</seg><lb /> pus
+        finem sor<seg type="ligature">ti</seg><seg type="ligature">tu</seg>r <choice>
+          <abbr>propt̅</abbr>
+          <expan>propterea</expan>
+        </choice> quad<seg type="ligature">ri</seg><seg
+          type="ligature">em</seg>ni <lb />
+<choice>
+          <abbr>cursu̅</abbr>
+          <expan>cursum</expan>
+        </choice> so<seg type="ligature">li</seg>s ‧ <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> <choice>
+          <abbr>propt̅</abbr>
+          <expan>propterea</expan>
+        </choice> <choice>
+          <abbr>qd̅</abbr>
+          <expan>quod</expan>
+        </choice> singo<seg type="ligature">li</seg>s annis <lb />
+<choice>
+          <abbr>triu̅</abbr>
+          <expan>trium</expan>
+        </choice> <choice>
+          <abbr>horaru̅</abbr>
+          <expan>horarum</expan>
+        </choice> ‧ <choice>
+          <abbr>ↄsum</abbr>
+          <expan>consum</expan>
+        </choice> acione in quad<seg type="ligature">ri</seg><lb />
+<choice>
+          <abbr>enniu̅</abbr>
+          <expan>ennium</expan>
+        </choice> dies ‧ unus <choice>
+          <abbr>ↄpleatur</abbr>
+          <expan>conpleatur</expan>
+        </choice>, hoc mitte<lb /> bant <choice>
+          <abbr>te̅pore</abbr>
+          <expan>tempore</expan>
+        </choice> <choice>
+          <abbr>circu̅</abbr>
+          <expan>circum</expan>
+        </choice> ciuitates admu<lb /> nitu<seg
+          type="ligature">ri</seg> ‧ ut <choice>
+          <abbr>n̅</abbr>
+          <expan>non</expan>
+        </choice> <choice>
+          <abbr>solu̅</abbr>
+          <expan>solum</expan>
+        </choice> <choice>
+          <abbr>undiq;</abbr>
+          <expan>undique</expan>
+        </choice> <choice>
+          <abbr>ętate</abbr>
+          <expan>aetate</expan>
+        </choice> <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> sexu <choice>
+          <abbr>ↄue</abbr>
+          <expan>conue</expan>
+        </choice><lb /> ner<seg type="ligature">et</seg>ur ; <choice>
+          <abbr>lustru̅</abbr>
+          <expan>lustrum</expan>
+        </choice> <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> quinquenni tempus <lb /> aput romanos dic<seg
+          type="ligature">tu</seg>s <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> <choice>
+          <abbr>au̅</abbr>
+          <expan>apud</expan>
+        </choice> <choice>
+          <abbr>lustru̅</abbr>
+          <expan>lustrum</expan>
+        </choice> ‧ quia<lb /> census <choice>
+          <abbr>ꝑ</abbr>
+          <expan>per</expan>
+        </choice> <choice>
+          <abbr>quinquenniu̅</abbr>
+          <expan>quinquennium</expan>
+        </choice> ‧ in repub<seg type="ligature">li</seg>ca age<lb />
+        batur, deinde post per <choice>
+          <abbr>actu̅</abbr>
+          <expan>actum</expan>
+        </choice> ‧ <choice>
+          <abbr>&amp;</abbr>
+          <expan>et</expan>
+        </choice> sacrificio<lb /> facta ‧ urbis roma in lustrabatur ; <lb />indiciones
+        romani <choice>
+          <abbr>inuener̅</abbr>
+          <expan>inuenerunt</expan>
+        </choice> ‧ qui <choice>
+          <abbr>ꝑ</abbr>
+          <expan>per</expan>
+        </choice> singu<lb />los annos ‧ <choice>
+          <abbr>usq;</abbr>
+          <expan>usque</expan>
+        </choice> ad <choice>
+          <abbr>quintu̅</abbr>
+          <expan>quintum</expan>
+        </choice> decim<seg type="ligature">um</seg> ueni<lb />
+        entes rursus ad p<seg type="ligature">ri</seg>mi anni p<seg type="ligature">ri</seg>ncipium <lb />
+        reuoluun<seg type="ligature">tu</seg>r ; aera <choice>
+          <abbr>quoq;</abbr>
+          <expan>quoque</expan>
+        </choice> cesaris augusti<lb /> tempore posi<seg
+          type="ligature">ta</seg> <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> ; dicta <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> ‧ a<seg type="ligature">er</seg>a ex quo <lb /><choice>
+          <abbr>o̅nes</abbr>
+          <expan>omnes</expan>
+        </choice> urbis ‧ aes reddere prof<seg type="ligature">es</seg>
+        sus <choice>
+          <abbr>e̅</abbr>
+          <expan>est</expan>
+        </choice> rei<lb /> pub<seg type="ligature">li</seg>cae ‧ aera a
+        die <choice>
+          <abbr>kalendaru̅</abbr>
+          <expan>kalendarum</expan>
+        </choice> ianua<lb />
+<choice>
+          <abbr>riaru̅</abbr>
+          <expan>riarum</expan>
+        </choice> ‧ adcrescit ; Bi<add>s</add>sextus <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> ‧ anonas<lb /> marcias ‧ <choice>
+          <abbr>usq;</abbr>
+          <expan>usque</expan>
+        </choice> <choice>
+          <abbr>adie̅</abbr>
+          <expan>adiem</expan>
+        </choice> pridię kalenda<seg type="ligature">ru</seg>m <lb /><choice>
+          <abbr>ianuariaru̅</abbr>
+          <expan>ianuariarum</expan>
+        </choice> ‧ cu<seg type="ligature">rs</seg>iui lunae
+        apponitur; <lb />annus <choice>
+          <abbr>au̅</abbr>
+          <expan>autem</expan>
+        </choice> ‧ <choice>
+          <abbr>ęgipciorx</abbr>
+          <expan>aegipciorx</expan>
+        </choice> ‧ sine <choice>
+          <abbr>bissextu̅</abbr>
+          <expan>bissextum</expan>
+        </choice> inicium ‧<lb />
+<choice>
+          <abbr>hab&amp;</abbr>
+          <expan>habet</expan>
+        </choice> iiii ‧ <choice>
+          <abbr>kalendaru̅</abbr>
+          <expan>kalendarum</expan>
+        </choice> <choice>
+          <abbr>septe̅mbriu̅;</abbr>
+          <expan>septembrium</expan>
+        </choice> <choice>
+          <abbr>cu̅bis</abbr>
+          <expan>cumbis</expan>
+        </choice>
+<lb />sex<seg type="ligature">to</seg> ‧ a tercia <choice>
+          <abbr>kalendaru̅</abbr>
+          <expan>kalendarum</expan>
+        </choice> <choice>
+          <abbr>suꝑscriptaru̅</abbr>
+          <expan>superscriptarum</expan>
+        </choice> ‧</div>
+    </body>
+  </text>
+</TEI>
