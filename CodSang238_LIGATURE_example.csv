@@ -1,0 +1,448 @@
+ngram,text,page_index,line_index,offset_in_line,context,full_line,occurrence_index,total_for_gram,frequency_pct,exported_at
+ag,ag,0,3,52,‧ & pago men,"
+                    
+                    quos ‧ & pago menes ‧ uel int̅caleres siue
+                    
+                ",1,1,0.7692,2026-03-12T15:19:43.394Z
+an,an,2,6,61,u̅ ‧ antiqui,"
+                    
+                    tur ‧ que̅ annu̅ ‧ antiqui ‧ inde uicissimo",1,1,0.7692,2026-03-12T15:20:09.324Z
+ar,ar,3,1,50,us quartus ‧,"
+                    
+                    annus quartus ‧ olimpio ‧ agone q; uenit
+                    
+                ",1,1,0.7692,2026-03-12T15:20:17.565Z
+ari,ari,0,6,46, Januarius cu,"
+                    
+                    Januarius cu̅ dece̅brio in horaru̅ m̅sura
+                    
+                ",1,1,0.7692,2026-03-12T15:19:43.394Z
+as,as,2,16,56,ies pascalis,"
+                    
+                    longius dies pascalis protenditur ;",1,1,0.7692,2026-03-12T15:20:09.324Z
+eg,eg,2,19,52, collegitur ,"
+                    
+                    su̅ma collegitur ; annus iubelius e̅",1,3,2.3077,2026-03-12T15:20:09.324Z
+eg,eg,2,22,43,    tegitur ,"
+                    
+                    tegitur . in quo iuxta lege̅ clangebantur
+                    
+                ",2,3,2.3077,2026-03-12T15:20:09.324Z
+eg,eg,2,24,22,& ↄgregabant,"antiqua possesio & ↄgregabantur o̅nes
+                    
+                ",3,3,2.3077,2026-03-12T15:20:09.324Z
+egi,egi,0,2,64,u̅ ‧ egipcior,"
+                    
+                    duodecim au̅ m̅siu̅ ‧ egipcioru̅ ‧ v ‧ dies suꝑsunt
+                    
+                ",1,1,0.7692,2026-03-12T15:19:43.394Z
+el,el,2,10,75,nus uel ciui,"
+                    
+                    recurrit ‧ ipse & solaris annus uel ciuiles
+                    
+                ",1,1,0.7692,2026-03-12T15:20:09.324Z
+em,em,0,4,79,ius memoratu,"
+                    
+                    aditos ‧ uocauer̅, dequib; superius memoratu̅ e̅;
+                    
+                ",1,3,2.3077,2026-03-12T15:19:43.394Z
+em,em,3,2,88,nis tem,"
+                    
+                    trans ‧ actis annis ‧ iiii ‧ in quib; atonis tem",2,3,2.3077,2026-03-12T15:20:17.565Z
+em,em,3,3,74,"uadriemni
+  ","
+                    
+                    pus finem sortitur propt̅ quadriemni
+                    
+                ",3,3,2.3077,2026-03-12T15:20:17.565Z
+en,en,0,3,57,ago menes ‧ ,"
+                    
+                    quos ‧ & pago menes ‧ uel int̅caleres siue
+                    
+                ",1,5,3.8462,2026-03-12T15:19:43.394Z
+en,en,0,8,24,us ↄsentit ‧,ęquale sumat; marcius ↄsentit ‧ octim,2,5,3.8462,2026-03-12T15:19:43.394Z
+en,en,1,15,46,t dementiue ,id ‧ e̅ circulu̅ ‧ unde & anuli dicti sunt dementiue ;,3,5,3.8462,2026-03-12T15:19:58.700Z
+en,en,1,26,51,a ‧ tenebras,"
+                    
+                    facta ‧ tenebras ‧ tocius orbis efficiat ‧",4,5,3.8462,2026-03-12T15:19:58.700Z
+en,en,3,25,57,‧ kalendaru̅,"
+                    
+                    hab& iiii ‧ kalendaru̅ septe̅mbriu̅; cu̅bis
+                    
+                ",5,5,3.8462,2026-03-12T15:20:17.565Z
+ep,ep,1,11,20,s acceptabil,ecce nunc te̅pus acceptabile ‧ ; fine̅ dinique,1,1,0.7692,2026-03-12T15:19:58.700Z
+er,er,3,18,75,̅ ‧ aera ex ,"
+                    
+                    tempore posita e̅ ; dicta au̅ ‧ aera ex quo
+                    
+                ",1,1,0.7692,2026-03-12T15:20:17.565Z
+es,es,1,5,55, m̅nses ‧ cu,"
+                    
+                    duodecim m̅nses ‧ cuius quide̅ nomen",1,6,4.6154,2026-03-12T15:19:58.700Z
+es,es,1,23,17,̅ses es term,"ꝑ duodece̅ m̅ses es terminatur ; annus
+                    
+                ",2,6,4.6154,2026-03-12T15:19:58.700Z
+es,es,2,23,58,‧ o̅nes reue,"
+                    
+                    tubae & ad ‧ o̅nes reuertebantur",3,6,4.6154,2026-03-12T15:20:09.324Z
+es,es,2,24,35,"r o̅nes
+    ","antiqua possesio & ↄgregabantur o̅nes
+                    
+                ",4,6,4.6154,2026-03-12T15:20:09.324Z
+es,es,3,19,3,o̅nes urbi,o̅nes urbis ‧ aes reddere professus e̅ rei,5,6,4.6154,2026-03-12T15:20:17.565Z
+es,es,3,19,30, professus e,o̅nes urbis ‧ aes reddere professus e̅ rei,6,6,4.6154,2026-03-12T15:20:17.565Z
+et,et,3,9,45,  neretur ; ,"
+                    
+                    neretur ; lustru̅ e̅ quinquenni tempus
+                    
+                ",1,1,0.7692,2026-03-12T15:20:17.565Z
+ex,ex,2,3,42,     exposit,"
+                    
+                    exposita e̅ ; annus magnus dicitur quan",1,2,1.5385,2026-03-12T15:20:09.324Z
+ex,ex,2,18,15,u̅ ‧ ex quat,quadrienniu̅ ‧ ex quatrantis racione,2,2,1.5385,2026-03-12T15:20:09.324Z
+gi,gi,2,11,61,xv ꝑagitur ;,"
+                    
+                    qui dieb; ccclxv ꝑagitur ; annus lunaris
+                    
+                ",1,3,2.3077,2026-03-12T15:20:09.324Z
+gi,gi,2,16,45,  longius di,"
+                    
+                    longius dies pascalis protenditur ;",2,3,2.3077,2026-03-12T15:20:09.324Z
+gi,gi,2,26,46, & legitima ,"
+                    
+                    & legitima ; Olimpias uero e̅ aput gre
+                    
+                ",3,3,2.3077,2026-03-12T15:20:09.324Z
+gn,gn,1,6,55, ‧ significa,"
+                    
+                    figurate ‧ significat ‧ o̅ne te̅pus ‧ uitę",1,3,2.3077,2026-03-12T15:19:58.700Z
+gn,gn,2,3,64,us magnus di,"
+                    
+                    exposita e̅ ; annus magnus dicitur quan",2,3,2.3077,2026-03-12T15:20:09.324Z
+gn,gn,2,9,44,   signa cir,"
+                    
+                    signa circuitu ‧ in id ‧ unde cursus sui sumit",3,3,2.3077,2026-03-12T15:20:09.324Z
+le,le,2,7,63,l implerin d,"
+                    
+                    anno finire ‧ uel implerin dixer̅ ;",1,2,1.5385,2026-03-12T15:20:09.324Z
+le,le,2,10,82," ciuiles
+   ","
+                    
+                    recurrit ‧ ipse & solaris annus uel ciuiles
+                    
+                ",2,2,1.5385,2026-03-12T15:20:09.324Z
+li,li,1,2,80,e̅ iulio ;,"
+                    
+                    respondit agusto ; junius ↄpar ‧ e̅ iulio ;",1,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,4,65,us solis ‧ a,"
+                    
+                    Annus ‧ e̅ circuitus solis ‧ ac reditus per",2,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,16,25,i ‧ alii a b,principiu̅ ‧ au̅ anni ‧ alii a broma putant aut po,3,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,17,2,puli roma,puli romani ; alii ab ęquinoccio uerno ;,4,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,17,15,i ; alii ab ,puli romani ; alii ab ęquinoccio uerno ;,5,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,18,55,i ; alii ‧ a,"
+                    
+                    ut hebrei ; alii ‧ a solisticio ut greci ;",6,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,18,65, a solistici,"
+                    
+                    ut hebrei ; alii ‧ a solisticio ut greci ;",7,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,19,43,    alii ab ,"
+                    
+                    alii ab autu̅no ut ęgipcii ;",8,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,24,48,aturalis e̅ ,"
+                    
+                    naturalis e̅ cu̅ se soli ‧ luna ‧ supponit ‧",9,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,1,24,64,se soli ‧ lu,"
+                    
+                    naturalis e̅ cu̅ se soli ‧ luna ‧ supponit ‧",10,17,13.0769,2026-03-12T15:19:58.700Z
+li,li,2,14,54, embolismus ,"
+                    
+                    annus ‧ embolismus e̅ qui lunas tredecim",11,17,13.0769,2026-03-12T15:20:09.324Z
+li,li,2,26,56,a ; Olimpias,"
+                    
+                    & legitima ; Olimpias uero e̅ aput gre
+                    
+                ",12,17,13.0769,2026-03-12T15:20:09.324Z
+li,li,3,1,59,s ‧ olimpio ,"
+                    
+                    annus quartus ‧ olimpio ‧ agone q; uenit
+                    
+                ",13,17,13.0769,2026-03-12T15:20:17.565Z
+li,li,3,4,51,u̅ solis ‧ &,"
+                    
+                    cursu̅ solis ‧ & propt̅ qd̅ singolis annis
+                    
+                ",14,17,13.0769,2026-03-12T15:20:17.565Z
+li,li,3,4,75,singolis ann,"
+                    
+                    cursu̅ solis ‧ & propt̅ qd̅ singolis annis
+                    
+                ",15,17,13.0769,2026-03-12T15:20:17.565Z
+li,li,3,11,74,republica ag,"
+                    
+                    census ꝑ quinquenniu̅ ‧ in republica age",16,17,13.0769,2026-03-12T15:20:17.565Z
+li,li,3,20,45,  publicae ‧,"
+                    
+                    publicae ‧ aera a die kalendaru̅ ianua",17,17,13.0769,2026-03-12T15:20:17.565Z
+lu,lu,2,14,68, qui lunas t,"
+                    
+                    annus ‧ embolismus e̅ qui lunas tredecim",1,1,0.7692,2026-03-12T15:20:09.324Z
+ra,ra,2,1,74,uius racio d,"
+                    
+                    quod dicitur ‧ eclipsis ‧ cuius racio deucius
+                    
+                ",1,1,0.7692,2026-03-12T15:20:09.324Z
+rb,rb,1,25,55,̅ ‧ orbe̅ so,"
+                    
+                    ut ‧ int̅ ‧ orbe̅ solis & oculos nr̅os ‧ media",1,1,0.7692,2026-03-12T15:19:58.700Z
+re,re,1,13,48,̅dicare annu,"
+                    
+                    p̅dicare annu̅ dn̅i & die̅ r&ribucionis ;",1,3,2.3077,2026-03-12T15:19:58.700Z
+re,re,2,7,51, finire ‧ ue,"
+                    
+                    anno finire ‧ uel implerin dixer̅ ;",2,3,2.3077,2026-03-12T15:20:09.324Z
+re,re,3,7,52,te̅pore circ,"
+                    
+                    bant te̅pore circu̅ ciuitates admu",3,3,2.3077,2026-03-12T15:20:17.565Z
+ri,ri,0,4,73, superius me,"
+                    
+                    aditos ‧ uocauer̅, dequib; superius memoratu̅ e̅;
+                    
+                ",1,19,14.6154,2026-03-12T15:19:43.394Z
+ri,ri,0,6,62,ece̅brio in ,"
+                    
+                    Januarius cu̅ dece̅brio in horaru̅ m̅sura
+                    
+                ",2,19,14.6154,2026-03-12T15:19:43.394Z
+ri,ri,0,7,59,ebruarius cu,"
+                    
+                    concordat; februarius cu̅ noue̅brio ‧
+                    
+                ",3,19,14.6154,2026-03-12T15:19:43.394Z
+ri,ri,0,7,74,"oue̅brio ‧
+ ","
+                    
+                    concordat; februarius cu̅ noue̅brio ‧
+                    
+                ",4,19,14.6154,2026-03-12T15:19:43.394Z
+ri,ri,0,9,43,"    brio;
+  ","
+                    
+                    brio;
+                    
+                ",5,19,14.6154,2026-03-12T15:19:43.394Z
+ri,ri,1,1,66,ptimbrio ; m,"
+                    
+                    aperilis ‧ ęquat septimbrio ; maius
+                    
+                ",6,19,14.6154,2026-03-12T15:19:58.700Z
+ri,ri,1,16,1,principi,principiu̅ ‧ au̅ anni ‧ alii a broma putant aut po,7,19,14.6154,2026-03-12T15:19:58.700Z
+ri,ri,2,4,70,te̅poribus n,"
+                    
+                    do o̅nia sidera certis te̅poribus numeris
+                    
+                ",8,19,14.6154,2026-03-12T15:20:09.324Z
+ri,ri,2,7,65,implerin dix,"
+                    
+                    anno finire ‧ uel implerin dixer̅ ;",9,19,14.6154,2026-03-12T15:20:09.324Z
+ri,ri,2,10,47,recurrit ‧ i,"
+                    
+                    recurrit ‧ ipse & solaris annus uel ciuiles
+                    
+                ",10,19,14.6154,2026-03-12T15:20:09.324Z
+ri,ri,2,10,64, solaris ann,"
+                    
+                    recurrit ‧ ipse & solaris annus uel ciuiles
+                    
+                ",11,19,14.6154,2026-03-12T15:20:09.324Z
+ri,ri,2,11,79," lunaris
+   ","
+                    
+                    qui dieb; ccclxv ꝑagitur ; annus lunaris
+                    
+                ",12,19,14.6154,2026-03-12T15:20:09.324Z
+ri,ri,2,18,4,quadrienniu,quadrienniu̅ ‧ ex quatrantis racione,13,19,14.6154,2026-03-12T15:20:09.324Z
+ri,ri,3,3,72," quadriemni
+","
+                    
+                    pus finem sortitur propt̅ quadriemni
+                    
+                ",14,19,14.6154,2026-03-12T15:20:17.565Z
+ri,ri,3,5,77, quadri,"
+                    
+                    triu̅ horaru̅ ‧ ↄsum acione in quadri",15,19,14.6154,2026-03-12T15:20:17.565Z
+ri,ri,3,8,46, nituri ‧ ut,"
+                    
+                    nituri ‧ ut n̅ solu̅ undiq; ętate & sexu ↄue",16,19,14.6154,2026-03-12T15:20:17.565Z
+ri,ri,3,16,59, ad primi an,"
+                    
+                    entes rursus ad primi anni principium
+                    
+                ",17,19,14.6154,2026-03-12T15:20:17.565Z
+ri,ri,3,16,70,nni principi,"
+                    
+                    entes rursus ad primi anni principium
+                    
+                ",18,19,14.6154,2026-03-12T15:20:17.565Z
+ri,ri,3,25,73,te̅mbriu̅; c,"
+                    
+                    hab& iiii ‧ kalendaru̅ septe̅mbriu̅; cu̅bis
+                    
+                ",19,19,14.6154,2026-03-12T15:20:17.565Z
+rs,rs,2,9,74,de cursus su,"
+                    
+                    signa circuitu ‧ in id ‧ unde cursus sui sumit",1,3,2.3077,2026-03-12T15:20:09.324Z
+rs,rs,3,4,44,   cursu̅ so,"
+                    
+                    cursu̅ solis ‧ & propt̅ qd̅ singolis annis
+                    
+                ",2,3,2.3077,2026-03-12T15:20:17.565Z
+rs,rs,3,23,16, ‧ cursiui l,"ianuariaru̅ ‧ cursiui lunae apponitur;
+                    
+                ",3,3,2.3077,2026-03-12T15:20:17.565Z
+ru,ru,0,7,56,; februarius,"
+                    
+                    concordat; februarius cu̅ noue̅brio ‧
+                    
+                ",1,2,1.5385,2026-03-12T15:19:43.394Z
+ru,ru,3,22,77,"lendarum
+   ","
+                    
+                    marcias ‧ usq; adie̅ pridię kalendarum
+                    
+                ",2,2,1.5385,2026-03-12T15:20:17.565Z
+ru̅,ru̅,0,2,71,ipcioru̅ ‧ v ,"
+                    
+                    duodecim au̅ m̅siu̅ ‧ egipcioru̅ ‧ v ‧ dies suꝑsunt
+                    
+                ",1,2,1.5385,2026-03-12T15:19:43.394Z
+ru̅,ru̅,3,25,61,lendaru̅ sept,"
+                    
+                    hab& iiii ‧ kalendaru̅ septe̅mbriu̅; cu̅bis
+                    
+                ",2,2,1.5385,2026-03-12T15:20:17.565Z
+ta,ta,1,9,64,acceptabiles,"
+                    
+                    cauit solus fuit acceptabiles ‧ sed & totum
+                    
+                ",1,5,3.8462,2026-03-12T15:19:58.700Z
+ta,ta,1,10,56,s iuxta qd̅ ,"
+                    
+                    hoc te̅pus iuxta qd̅ apostolus ait ‧ ;",2,5,3.8462,2026-03-12T15:19:58.700Z
+ta,ta,2,3,48,xposita e̅ ;,"
+                    
+                    exposita e̅ ; annus magnus dicitur quan",3,5,3.8462,2026-03-12T15:20:09.324Z
+ta,ta,3,18,54, posita e̅ ;,"
+                    
+                    tempore posita e̅ ; dicta au̅ ‧ aera ex quo
+                    
+                ",4,5,3.8462,2026-03-12T15:20:17.565Z
+ta,ta,3,26,36,scriptaru̅ ‧,sexto ‧ a tercia kalendaru̅ suꝑscriptaru̅ ‧,5,5,3.8462,2026-03-12T15:20:17.565Z
+tan,tan,1,16,39,ma putant aut,principiu̅ ‧ au̅ anni ‧ alii a broma putant aut po,1,1,0.7692,2026-03-12T15:19:58.700Z
+te,te,1,6,48,igurate ‧ si,"
+                    
+                    figurate ‧ significat ‧ o̅ne te̅pus ‧ uitę",1,3,2.3077,2026-03-12T15:19:58.700Z
+te,te,1,6,71,o̅ne te̅pus ,"
+                    
+                    figurate ‧ significat ‧ o̅ne te̅pus ‧ uitę",2,3,2.3077,2026-03-12T15:19:58.700Z
+te,te,2,16,67,s protenditu,"
+                    
+                    longius dies pascalis protenditur ;",3,3,2.3077,2026-03-12T15:20:09.324Z
+te̅,te̅,1,11,10,nunc te̅pus a,ecce nunc te̅pus acceptabile ‧ ; fine̅ dinique,1,1,0.7692,2026-03-12T15:19:58.700Z
+ti,ti,0,8,34, ‧ octim,ęquale sumat; marcius ↄsentit ‧ octim,1,12,9.2308,2026-03-12T15:19:43.394Z
+ti,ti,1,1,62,t septimbrio,"
+                    
+                    aperilis ‧ ęquat septimbrio ; maius
+                    
+                ",2,12,9.2308,2026-03-12T15:19:58.700Z
+ti,ti,1,15,35,i dicti sunt,id ‧ e̅ circulu̅ ‧ unde & anuli dicti sunt dementiue ;,3,12,9.2308,2026-03-12T15:19:58.700Z
+ti,ti,1,15,48,dementiue ;,id ‧ e̅ circulu̅ ‧ unde & anuli dicti sunt dementiue ;,4,12,9.2308,2026-03-12T15:19:58.700Z
+ti,ti,1,18,68,solisticio u,"
+                    
+                    ut hebrei ; alii ‧ a solisticio ut greci ;",5,12,9.2308,2026-03-12T15:19:58.700Z
+ti,ti,2,4,61,a certis te̅,"
+                    
+                    do o̅nia sidera certis te̅poribus numeris
+                    
+                ",6,12,9.2308,2026-03-12T15:20:09.324Z
+ti,ti,2,6,63, ‧ antiqui ‧,"
+                    
+                    tur ‧ que̅ annu̅ ‧ antiqui ‧ inde uicissimo",7,12,9.2308,2026-03-12T15:20:09.324Z
+ti,ti,2,8,4,solsticiali,solsticialis annus ‧ e̅ cu̅ sol ‧ expl&o ꝑ o̅nia,8,12,9.2308,2026-03-12T15:20:09.324Z
+ti,ti,2,17,12,issextilis ‧,annus bissextilis ‧ e̅ ‧ in quo unius diei per,9,12,9.2308,2026-03-12T15:20:09.324Z
+ti,ti,2,24,2,antiqua p,"antiqua possesio & ↄgregabantur o̅nes
+                    
+                ",10,12,9.2308,2026-03-12T15:20:09.324Z
+ti,ti,3,2,52, ‧ actis ann,"
+                    
+                    trans ‧ actis annis ‧ iiii ‧ in quib; atonis tem",11,12,9.2308,2026-03-12T15:20:17.565Z
+ti,ti,3,3,55,m sortitur p,"
+                    
+                    pus finem sortitur propt̅ quadriemni
+                    
+                ",12,12,9.2308,2026-03-12T15:20:17.565Z
+to,to,3,26,3,sexto ‧ a ,sexto ‧ a tercia kalendaru̅ suꝑscriptaru̅ ‧,1,1,0.7692,2026-03-12T15:20:17.565Z
+tr,tr,2,14,74,unas tredeci,"
+                    
+                    annus ‧ embolismus e̅ qui lunas tredecim",1,5,3.8462,2026-03-12T15:20:09.324Z
+tr,tr,2,18,21,x quatrantis,quadrienniu̅ ‧ ex quatrantis racione,2,5,3.8462,2026-03-12T15:20:09.324Z
+tr,tr,3,2,42,     trans ‧,"
+                    
+                    trans ‧ actis annis ‧ iiii ‧ in quib; atonis tem",3,5,3.8462,2026-03-12T15:20:17.565Z
+tr,tr,3,9,55,; lustru̅ e̅,"
+                    
+                    neretur ; lustru̅ e̅ quinquenni tempus
+                    
+                ",4,5,3.8462,2026-03-12T15:20:17.565Z
+tr,tr,3,10,72,̅ lustru̅ ‧ ,"
+                    
+                    aput romanos dictus e̅ au̅ lustru̅ ‧ quia",5,5,3.8462,2026-03-12T15:20:17.565Z
+tri,tri,1,22,77,us astri recu,"
+                    
+                    Cuilis annus ‧ e̅ qui ‧ in unius astri recursu",1,2,1.5385,2026-03-12T15:19:58.700Z
+tri,tri,3,5,42,     triu̅ ho,"
+                    
+                    triu̅ horaru̅ ‧ ↄsum acione in quadri",2,2,1.5385,2026-03-12T15:20:17.565Z
+tu,tu,0,1,22,mplentur die,taliq; racione complentur dies ‧ ccc lx ‧,1,11,8.4615,2026-03-12T15:19:43.394Z
+tu,tu,1,9,82," & totum
+   ","
+                    
+                    cauit solus fuit acceptabiles ‧ sed & totum
+                    
+                ",2,11,8.4615,2026-03-12T15:19:58.700Z
+tu,tu,1,21,51,e̅ naturale̅,"
+                    
+                    parte̅ naturale̅ ‧ patim magnu̅ e̅e dixer̅",3,11,8.4615,2026-03-12T15:19:58.700Z
+tu,tu,2,1,51, dicitur ‧ e,"
+                    
+                    quod dicitur ‧ eclipsis ‧ cuius racio deucius
+                    
+                ",4,11,8.4615,2026-03-12T15:20:09.324Z
+tu,tu,2,5,43,reuertun,q; ↄpl&is ad suu̅ locu̅ ‧ uel ordine̅ reuertun,5,11,8.4615,2026-03-12T15:20:09.324Z
+tu,tu,2,6,42,     tur ‧ q,"
+                    
+                    tur ‧ que̅ annu̅ ‧ antiqui ‧ inde uicissimo",6,11,8.4615,2026-03-12T15:20:09.324Z
+tu,tu,2,11,63, ꝑagitur ; a,"
+                    
+                    qui dieb; ccclxv ꝑagitur ; annus lunaris
+                    
+                ",7,11,8.4615,2026-03-12T15:20:09.324Z
+tu,tu,2,16,72,tenditur ;,"
+                    
+                    longius dies pascalis protenditur ;",8,11,8.4615,2026-03-12T15:20:09.324Z
+tu,tu,3,3,57,sortitur pro,"
+                    
+                    pus finem sortitur propt̅ quadriemni
+                    
+                ",9,11,8.4615,2026-03-12T15:20:17.565Z
+tu,tu,3,10,58,s dictus e̅ ,"
+                    
+                    aput romanos dictus e̅ au̅ lustru̅ ‧ quia",10,11,8.4615,2026-03-12T15:20:17.565Z
+tu,tu,3,17,50,oluuntur ; a,"
+                    
+                    reuoluuntur ; aera quoq; cesaris augusti",11,11,8.4615,2026-03-12T15:20:17.565Z
+um,um,3,15,33,decimum ueni,los annos ‧ usq; ad quintu̅ decimum ueni,1,1,0.7692,2026-03-12T15:20:17.565Z
+ęg,ęg,3,24,12,u̅ ‧ ęgipcio,annus au̅ ‧ ęgipciorx ‧ sine bissextu̅ inicium ‧,1,1,0.7692,2026-03-12T15:20:17.565Z
+ęta,ęta,3,8,70,diq; ętate & ,"
+                    
+                    nituri ‧ ut n̅ solu̅ undiq; ętate & sexu ↄue",1,1,0.7692,2026-03-12T15:20:17.565Z
