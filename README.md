@@ -54,5 +54,3 @@ pyinstaller app.spec
 
 - Windows → `dist/TEI-edit.exe`
 - macOS / Linux → `dist/TEI-edit`
-
-More detail: [docs/DESKTOP_BUILD_AND_DISTRIBUTE.md](docs/DESKTOP_BUILD_AND_DISTRIBUTE.md).

@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import re
+from copy import deepcopy
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 from flask import Flask, render_template, request, Response, redirect, url_for, session, send_from_directory
@@ -159,29 +160,14 @@ def _xml_escape(s):
 
 
 def _set_hand_note_content(hand_note, description, ns_tei):
-    """Set handNote mixed content from description string (may contain <term>, <ref>, <locus>)."""
+    """Set handNote text from description. No XML parsing of user content (avoids parse errors); lxml escapes on output."""
     if not description or not description.strip():
         return
-    s = description.strip().replace('&', '&amp;')
-    try:
-        wrap = etree.fromstring(f'<wrap xmlns="{ns_tei}">{s}</wrap>')
-    except Exception:
-        hand_note.text = description
-        return
-    hand_note.text = wrap.text or None
-    for child in wrap:
-        tag_local = etree.QName(child).localname if child.tag is not None else ''
-        if tag_local in ('term', 'ref', 'locus'):
-            hand_note.append(etree.fromstring(etree.tostring(child, encoding='unicode')))
-            hand_note[-1].tail = child.tail
-        else:
-            if hand_note.text is None:
-                hand_note.text = ''
-            hand_note.text += etree.tostring(child, encoding='unicode') + (child.tail or '')
+    hand_note.text = description.strip()
 
 
-def build_hand_desc_xml(hands, fallback_hand_note=''):
-    """Build TEI <handDesc> content as XML string. hands: list of dicts (xml_id, scope, medium, scribe, locus, description)."""
+def build_hand_desc_element(hands, fallback_hand_note=''):
+    """Build TEI handDesc as an element tree (for safe insertion). hands: list of dicts (xml_id, scope, medium, scribe, locus, description)."""
     ns_tei = 'http://www.tei-c.org/ns/1.0'
     hand_desc = etree.Element(f'{{{ns_tei}}}handDesc')
     if hands:
@@ -203,7 +189,7 @@ def build_hand_desc_xml(hands, fallback_hand_note=''):
                 hand_note.set('scribe', scribe)
             if locus:
                 locus_el = etree.SubElement(hand_note, f'{{{ns_tei}}}locus')
-                locus_el.text = locus
+                locus_el.text = locus or None
                 locus_el.tail = description if description else None
             else:
                 _set_hand_note_content(hand_note, description, ns_tei)
@@ -211,7 +197,7 @@ def build_hand_desc_xml(hands, fallback_hand_note=''):
         if fallback_hand_note:
             hand_note = etree.SubElement(hand_desc, f'{{{ns_tei}}}handNote')
             hand_note.text = fallback_hand_note
-    return etree.tostring(hand_desc, encoding='unicode', method='xml')
+    return hand_desc
 
 
 def _extract_hands_from_tree(tree, ns):
@@ -255,11 +241,89 @@ def get_tei_template():
     """Load TEI header/body template: custom file if present, else built-in. Placeholders: title, author, date, transcriber, country, settlement, repository, idno, material, objectType, handDesc, language."""
     if os.path.isfile(TEI_LAYOUT_FILE):
         try:
-            with open(TEI_LAYOUT_FILE, 'r', encoding='utf-8') as f:
+            with open(TEI_LAYOUT_FILE, 'r', encoding='utf-8-sig') as f:
                 return f.read()
         except Exception:
             pass
     return TEI_TEMPLATE
+
+
+def _apply_tei_template_placeholders(xml_str, defaults):
+    """Substitute {placeholder} in template without interpreting braces in values. Escapes text fields for XML. handDesc is NOT substituted here; use an empty element so the doc parses, then inject handDesc in export_tei."""
+    text_placeholders = ['title', 'author', 'date', 'transcriber', 'country', 'settlement', 'repository', 'idno', 'material', 'objectType', 'language']
+    out = xml_str
+    for key in text_placeholders:
+        val = defaults.get(key, '???')
+        out = out.replace('{' + key + '}', _xml_escape(str(val)) if val else '')
+    out = out.replace('{handDesc}', '<handDesc xmlns="http://www.tei-c.org/ns/1.0"></handDesc>')
+    return out
+
+
+def _build_tei_root_element(defaults, hand_desc_el):
+    """Build TEI root element in code (no string parsing). Never raises XMLSyntaxError. defaults: title, author, date, transcriber, country, settlement, repository, idno, material, objectType, language. hand_desc_el: handDesc element from build_hand_desc_element."""
+    ns = TEI_NS
+
+    def t(tag, text=None, **attrs):
+        el = etree.Element(f'{{{ns}}}{tag}')
+        for k, v in attrs.items():
+            if v is not None:
+                el.set(k, str(v))
+        if text is not None:
+            el.text = _xml_escape(str(text)) if text else None
+        return el
+
+    def add(parent, tag, text=None, **attrs):
+        el = t(tag, text=text, **attrs)
+        parent.append(el)
+        return el
+
+    tei = etree.Element(f'{{{ns}}}TEI', nsmap={None: ns})
+    header = add(tei, 'teiHeader')
+    fd = add(header, 'fileDesc')
+    ts = add(fd, 'titleStmt')
+    add(ts, 'title', defaults.get('title') or '???')
+    add(ts, 'author', defaults.get('author') or '???')
+    add(ts, 'date', defaults.get('date') or '???')
+    add(ts, 'respStmt')
+    ts[-1].append(t('resp', 'transcribed by'))
+    ts[-1].append(t('name', defaults.get('transcriber') or '???'))
+    add(ts, 'respStmt')
+    ts[-1].append(t('resp', 'validated by'))
+    ts[-1].append(t('name', 'TEI-edit'))
+    add(fd, 'publicationStmt').append(t('p', 'Transcribed using TEI-edit.'))
+    sd = add(fd, 'sourceDesc')
+    ms = add(sd, 'msDesc')
+    mi = add(ms, 'msIdentifier')
+    add(mi, 'country', defaults.get('country') or '???')
+    add(mi, 'settlement', defaults.get('settlement') or '???')
+    add(mi, 'repository', defaults.get('repository') or '???')
+    add(mi, 'idno', defaults.get('idno') or '???')
+    pd = add(ms, 'physDesc')
+    od = add(pd, 'objectDesc')
+    supd = add(od, 'supportDesc')
+    sup = add(supd, 'support')
+    add(sup, 'material', defaults.get('material') or '???')
+    add(sup, 'objectType', defaults.get('objectType') or '???')
+    add(sup, 'dimensions')
+    add(od, 'layoutDesc').append(t('layout'))
+    pd.append(hand_desc_el)
+    hist = add(ms, 'history')
+    add(hist, 'origin')
+    add(hist, 'provenance')
+    enc = add(header, 'encodingDesc')
+    add(enc, 'projectDesc').append(t('p', 'Digital transcription of the source document.'))
+    add(enc, 'editorialDecl').append(t('p', 'Capital and lowercase letters will be normalized.'))
+    add(enc, 'samplingDecl').append(t('p', 'Full transcription of the selected folio(s).'))
+    prof = add(header, 'profileDesc')
+    add(prof, 'langUsage').append(t('p', defaults.get('language') or '???'))
+    td = add(prof, 'textDesc')
+    add(td, 'channel', None, mode='w').text = 'written'
+    rev = add(header, 'revisionDesc')
+    add(rev, 'change', 'Initial transcription created.', when=defaults.get('date') or '???')
+    text_el = add(tei, 'text')
+    body = add(text_el, 'body')
+    add(body, 'div', None, type='edition')
+    return tei
 
 def _indent_xml_string(xml_str, indent_str='  '):
     """Indent XML by tracking tag depth. Does not require valid XML (no parse)."""
@@ -373,6 +437,29 @@ def build_page_from_pagexml(filepath):
     }
 
 
+def _decode_xml_char_refs(s):
+    """Decode &#xNNNN; and &#N; in string to actual characters."""
+    s = re.sub(r'&#x([0-9A-Fa-f]+);', lambda m: chr(int(m.group(1), 16)), s)
+    s = re.sub(r'&#(\d+);', lambda m: chr(int(m.group(1))), s)
+    return s
+
+
+def _collapse_choice_abbr_expan(line_xml):
+    """Replace <choice><abbr>...</abbr><expan>...</expan></choice> with editor span so TEI round-trips."""
+    def repl(m):
+        abbr_inner = m.group(1) or ''
+        expan_inner = m.group(2) or ''
+        abbr_decoded = _decode_xml_char_refs(abbr_inner)
+        abbr_text = re.sub(r'<[^>]+>', '', abbr_decoded).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        expan_flat = re.sub(r'<[^>]+>', '', expan_inner)
+        expan_text = expan_flat.replace('&', '&amp;').replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
+        return f'<span class="tei-tag tag-choice" data-tag="choice" data-attr-expan="{expan_text}">{abbr_text}</span>'
+    return re.sub(
+        r'<choice[^>]*>\s*<abbr[^>]*>(.*?)</abbr>\s*<expan[^>]*>(.*?)</expan>\s*</choice>',
+        repl, line_xml, flags=re.DOTALL
+    )
+
+
 def build_page_from_tei(tree, filepath):
     """Build a page dict from a TEI tree (body lines only). Caller sets session['doc_meta']."""
     ns = {'t': 'http://www.tei-c.org/ns/1.0'}
@@ -398,6 +485,7 @@ def build_page_from_tei(tree, filepath):
         for i, line_content in enumerate(raw_lines):
             if not line_content.strip():
                 continue
+            line_content = _collapse_choice_abbr_expan(line_content)
             html_line = re.sub(r'<(\w+)([^>]*)>(.*?)</\1>', tag_replacer, line_content)
             html_line = html_line.replace('xmlns="http://www.tei-c.org/ns/1.0"', '')
             text_only = re.sub(r'<[^>]+>', '', line_content).strip()
@@ -577,6 +665,7 @@ def parse_tei_import(tree):
                     attr_str += f' data-attr-{k}="{v}"'
                 return f'<span class="tei-tag tag-{tag}{extra_class}" data-tag="{tag}"{attr_str}>{content}</span>'
 
+            line_content = _collapse_choice_abbr_expan(line_content)
             hand_shift = re.search(r'<handShift\s+new="([^"]*)"\s*/?\s*>', line_content)
             if hand_shift:
                 line_content = re.sub(
@@ -661,7 +750,8 @@ def editor():
         session['current_page_index'] = 0
     page = pages[current_index]
     file_path = page.get('file')
-    if not file_path or not os.path.exists(file_path):
+    from_tei_edit = page.get('from_tei_edit')
+    if not from_tei_edit and (not file_path or not os.path.exists(file_path)):
         return redirect(url_for('index'))
 
     lines_in = page.get('lines', [])
@@ -700,16 +790,44 @@ def editor():
                            pages_summary=pages_summary,
                            page_image_urls=page_image_urls)
 
+
+@app.route('/editor/save_page', methods=['POST'])
+def editor_save_page():
+    """Save current page HTML to session (for auto-save and before leaving the page). Accepts JSON or form body."""
+    pages = session.get('pages')
+    if not pages:
+        return Response(json.dumps({'ok': False, 'error': 'no pages'}), status=400, mimetype='application/json')
+    if request.content_type and 'application/json' in request.content_type:
+        data = request.get_json(silent=True) or {}
+        html_content = data.get('html_content', '')
+        try:
+            current_index = int(data.get('current_page_index', session.get('current_page_index', 0)))
+        except (TypeError, ValueError):
+            current_index = session.get('current_page_index', 0)
+    else:
+        html_content = request.form.get('html_content', '')
+        try:
+            current_index = int(request.form.get('current_page_index', session.get('current_page_index', 0)))
+        except (TypeError, ValueError):
+            current_index = session.get('current_page_index', 0)
+    if 0 <= current_index < len(pages):
+        session['pages'][current_index]['html'] = html_content
+    return Response(json.dumps({'ok': True}), mimetype='application/json')
+
+
 @app.route('/editor/switch_page', methods=['POST'])
 def switch_page():
     pages = session.get('pages')
     if not pages:
         return redirect(url_for('index'))
-    current_index = session.get('current_page_index', 0)
+    # Use form's current_page_index so we save HTML to the page the client is actually showing (avoids session/display mismatch)
+    current_index = request.form.get('current_page_index', type=int)
+    if current_index is None or current_index < 0 or current_index >= len(pages):
+        current_index = session.get('current_page_index', 0)
     target_index = request.form.get('target_page_index', type=int)
     if target_index is not None and 0 <= target_index < len(pages):
         html_content = request.form.get('html_content', '')
-        if current_index < len(pages):
+        if 0 <= current_index < len(pages):
             session['pages'][current_index]['html'] = html_content
         session['current_page_index'] = target_index
     highlight_gram = request.form.get('highlight_gram') or request.args.get('highlight')
@@ -729,9 +847,12 @@ def change_image():
     pages = session.get('pages')
     if not pages:
         return redirect(url_for('index'))
-    current_index = session.get('current_page_index', 0)
-    if current_index < 0 or current_index >= len(pages):
-        return redirect(url_for('editor'))
+    # Prefer the form's current_page_index so we update the page the client is actually showing
+    current_index = request.form.get('current_page_index', type=int)
+    if current_index is None or current_index < 0 or current_index >= len(pages):
+        current_index = session.get('current_page_index', 0)
+        if current_index is None or current_index < 0 or current_index >= len(pages):
+            return redirect(url_for('editor'))
     f = request.files.get('image')
     if not f or not f.filename:
         return redirect(url_for('editor'))
@@ -761,10 +882,16 @@ def change_image():
 
 @app.route('/editor/reorder_pages', methods=['POST'])
 def reorder_pages():
-    """Apply new page order; order is comma-separated indices e.g. 0,2,1,3."""
+    """Apply new page order; order is comma-separated indices e.g. 0,2,1,3. Saves current page HTML first."""
     pages = session.get('pages')
     if not pages or len(pages) < 2:
         return redirect(url_for('editor'))
+    current_index = request.form.get('current_page_index', type=int)
+    if current_index is None or current_index < 0 or current_index >= len(pages):
+        current_index = session.get('current_page_index', 0)
+    html_content = request.form.get('html_content', '')
+    if html_content and 0 <= current_index < len(pages):
+        session['pages'][current_index]['html'] = html_content
     order_str = request.form.get('order')
     if not order_str:
         return redirect(url_for('editor'))
@@ -775,7 +902,6 @@ def reorder_pages():
     if set(new_order) != set(range(len(pages))) or len(new_order) != len(pages):
         return redirect(url_for('editor'))
     reordered = [pages[i] for i in new_order]
-    current_index = session.get('current_page_index', 0)
     old_page = pages[current_index]
     new_index = reordered.index(old_page)
     session['pages'] = reordered
@@ -790,7 +916,9 @@ def add_pages():
     pages = session.get('pages')
     if not pages:
         return redirect(url_for('index'))
-    current_index = session.get('current_page_index', 0)
+    current_index = request.form.get('current_page_index', type=int)
+    if current_index is None or current_index < 0 or current_index >= len(pages):
+        current_index = session.get('current_page_index', 0)
     html_content = request.form.get('html_content', '')
     if current_index < len(pages):
         session['pages'][current_index]['html'] = html_content
@@ -824,7 +952,9 @@ def remove_pages():
     pages = session.get('pages')
     if not pages:
         return redirect(url_for('editor'))
-    current_index = session.get('current_page_index', 0)
+    current_index = request.form.get('current_page_index', type=int)
+    if current_index is None or current_index < 0 or current_index >= len(pages):
+        current_index = session.get('current_page_index', 0)
     html_content = request.form.get('html_content', '')
     if current_index < len(pages):
         session['pages'][current_index]['html'] = html_content
@@ -1017,9 +1147,11 @@ def _xml_escape_text(s):
         return s
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
+
 def _get_data_attrs(span):
-    return {k.replace('data-attr-', ''): str(v) for k, v in span.attrs.items()
-            if k.startswith('data-attr-') and v is not None}
+    """Extract data-attr-* as dict; keys lowercased so expan/Expan both work after HTML lowercasing."""
+    return {k.replace('data-attr-', '').lower(): str(v) for k, v in (getattr(span, 'attrs', {}) or {}).items()
+            if k and str(k).lower().startswith('data-attr-') and v is not None}
 
 def _line_plain_text_and_ranges(line_div):
     """Walk line_div in document order; return (plain_text, ranges).
@@ -1090,9 +1222,27 @@ def _normalize_hand_attr(attrs):
             a[key] = '#' + str(a[key])
     return a
 
+def _event_order_key(e):
+    """Order at same boundary: close abbr first, then expan_inline (so expan is added to choice), then close choice, then other close, then open, then handShift."""
+    ev_type, tag = e[1], (e[2] or '')
+    if ev_type == 'close':
+        if tag == 'abbr':
+            return (0, 0)
+        if tag == 'choice':
+            return (0, 2)
+        return (0, 0)
+    if ev_type == 'expan_inline':
+        return (0, 1)
+    if ev_type == 'open':
+        return (2, 0 if tag == 'choice' else 1)
+    if ev_type == 'handShift':
+        return (3, 0)
+    return (4, 0)
+
+
 def _ranges_to_inline_segments(line_text, ranges):
-    """Convert (line_text, ranges) to a list of segments: ('text', s) or ('open', tag, attrs) or ('close', tag) or ('handShift', attrs).
-    Overlapping ranges are nested (close before open at same position)."""
+    """Convert (line_text, ranges) to a list of segments: ('text', s) or ('open', tag, attrs) or ('close', tag) or ('handShift', attrs) or ('expan_inline', value).
+    choice+expan produces <choice><abbr>...</abbr><expan>...</expan></choice>. Overlapping ranges are nested (close before open at same position)."""
     if not ranges:
         return [('text', line_text)] if line_text else []
     boundaries = sorted(set([0, len(line_text)] + [r[0] for r in ranges] + [r[1] for r in ranges]))
@@ -1100,22 +1250,34 @@ def _ranges_to_inline_segments(line_text, ranges):
     for start, end, kind, tag_name, attrs in ranges:
         if kind == 'handShift':
             events.append((start, 'handShift', None, attrs))
+        elif kind == 'tag' and tag_name == 'choice':
+            # TEI <choice><abbr>text</abbr><expan>expansion</expan></choice>; always emit expan (use value or '')
+            a = attrs or {}
+            expan_val = a.get('expan') or a.get('expansion') or ''
+            events.append((start, 'open', 'choice', {}))
+            events.append((start, 'open', 'abbr', {}))
+            events.append((end, 'close', 'abbr', None))
+            events.append((end, 'expan_inline', expan_val, None))
+            events.append((end, 'close', 'choice', None))
         else:
             events.append((start, 'open', tag_name, attrs or {}))
             events.append((end, 'close', tag_name, None))
-    events.sort(key=lambda e: (e[0], 0 if e[1] == 'close' else 1 if e[1] == 'open' else 2))
+    def _open_sort_key(tag):
+        return (0 if tag == 'choice' else 1, tag or '')
+    events.sort(key=lambda e: (e[0], _event_order_key(e), _open_sort_key(e[2]) if e[1] == 'open' else (e[2] or '')))
     segments = []
     open_stack = []
     for i in range(len(boundaries) - 1):
         b, next_b = boundaries[i], boundaries[i + 1]
         text_run = line_text[b:next_b]
-        closes_set = set(e[2] for e in events if e[0] == b and e[1] == 'close')
-        while open_stack and open_stack[-1][0] in closes_set:
-            segments.append(('close', open_stack.pop()[0]))
-        for ev in events:
-            if ev[0] != b:
-                continue
-            if ev[1] == 'open':
+        events_at_b = [e for e in events if e[0] == b]
+        for ev in events_at_b:
+            if ev[1] == 'close':
+                if open_stack:
+                    segments.append(('close', open_stack.pop()[0]))
+            elif ev[1] == 'expan_inline':
+                segments.append(('expan_inline', ev[2] or ''))
+            elif ev[1] == 'open':
                 tag, attrs = ev[2], _normalize_hand_attr(ev[3]) or {}
                 segments.append(('open', tag, attrs))
                 open_stack.append((tag, attrs))
@@ -1126,7 +1288,8 @@ def _ranges_to_inline_segments(line_text, ranges):
     return segments
 
 def _apply_segments_to_tei(segments, ns, tei_div, lb):
-    """Apply segment list to tei_div: set lb.tail and append top-level elements with correct .text/.tail. No text duplication."""
+    """Apply segment list to tei_div: set lb.tail and append top-level elements with correct .text/.tail. No text duplication.
+    choice: <choice><abbr>marked text</abbr><expan>expansion</expan></choice>."""
     lb_tail = []
     last_toplevel = None
     stack = []
@@ -1178,7 +1341,61 @@ def _apply_segments_to_tei(segments, ns, tei_div, lb):
             else:
                 tei_div.append(elem)
                 last_toplevel = elem
+        elif seg[0] == 'expan_inline':
+            value = (seg[1] or '').strip()
+            if stack:
+                expan_el = etree.Element(f'{{{ns}}}expan')
+                if value:
+                    expan_el.text = _xml_escape_text(value)
+                stack[-1].append(expan_el)
     lb.tail = ''.join(lb_tail) if lb_tail else None
+
+
+def _merge_consecutive_seg_hands(tei_div, ns):
+    """Merge consecutive <seg hand="X">...</seg><lb/><seg hand="X">...</seg> into a single <seg hand="X">...<lb/>...</seg> (standard TEI: one seg wrapping multi-line selection with lb inside)."""
+    seg_tag = f'{{{ns}}}seg'
+    lb_tag = f'{{{ns}}}lb'
+    children = list(tei_div)
+    i = 0
+    while i < len(children):
+        elem = children[i]
+        if elem.tag != seg_tag:
+            i += 1
+            continue
+        hand = elem.get('hand')
+        if not hand:
+            i += 1
+            continue
+        run = [elem]
+        j = i + 1
+        while j + 1 < len(children) and children[j].tag == lb_tag and children[j + 1].tag == seg_tag and children[j + 1].get('hand') == hand:
+            run.append(children[j])
+            run.append(children[j + 1])
+            j += 2
+        if len(run) == 1:
+            i += 1
+            continue
+        segs = run[0::2]
+        lbs = run[1::2]
+        new_seg = etree.Element(seg_tag, hand=hand)
+        for k in range(len(segs)):
+            seg = segs[k]
+            if k == 0 and seg.text:
+                new_seg.text = (new_seg.text or '') + (seg.text or '')
+            for c in seg:
+                new_seg.append(deepcopy(c))
+            if k < len(lbs):
+                lb = lbs[k]
+                new_seg.append(lb)
+                lb.tail = (segs[k + 1].text or '') if k + 1 < len(segs) else ''
+        idx = tei_div.index(run[0])
+        tei_div.insert(idx, new_seg)
+        for seg in segs:
+            tei_div.remove(seg)
+        children = list(tei_div)
+        i = idx + 1
+    return tei_div
+
 
 def _append_page_html_to_tei(tei_div, page_html, page_num, include_facs):
     """Append <pb n="page_num"/> and line content from page_html. Uses offset-based inline serialization: no text duplication, tags wrap slices of the single line string."""
@@ -1227,18 +1444,16 @@ def export_tei():
         if not isinstance(hands, list):
             hands = []
         hands = [h for h in hands if isinstance(h, dict)]
-        defaults['handDesc'] = build_hand_desc_xml(hands, meta.get('handNote', ''))
         defaults['handNote'] = (hands[0].get('description', '') if hands else meta.get('handNote', ''))
 
         try:
-            xml_str = get_tei_template().format(**defaults)
-        except KeyError as e:
-            return Response(f"Export template placeholder missing: {e}. Check TEI export layout.", status=400, mimetype='text/plain')
-
-        tei_root = etree.fromstring(xml_str.encode('utf-8'))
+            hand_desc_el = build_hand_desc_element(hands, meta.get('handNote', ''))
+        except Exception:
+            hand_desc_el = etree.Element(f'{{{TEI_NS}}}handDesc')
+        tei_root = _build_tei_root_element(defaults, hand_desc_el)
         tei_div = tei_root.find(".//{http://www.tei-c.org/ns/1.0}div[@type='edition']")
         if tei_div is None:
-            return Response("Export template must contain <div type='edition'> inside <text><body>. Check TEI export layout.", status=400, mimetype='text/plain')
+            return Response("Export failed: could not find edition div.", status=500, mimetype='text/plain')
 
         if not pages:
             soup = BeautifulSoup(html_content or '', 'html.parser')
@@ -1257,6 +1472,8 @@ def export_tei():
                         buf.append(f'<div class="line-wrapper" data-points="{escape(pts)}">{html_part}</div>')
                     _append_page_html_to_tei(tei_div, ''.join(buf), i + 1, include_facs)
 
+        _merge_consecutive_seg_hands(tei_div, TEI_NS)
+
         out_xml = etree.tostring(tei_root, pretty_print=True, xml_declaration=True, encoding='UTF-8')
         filename = 'annotated_tei_clean.xml' if export_format == 'clean' else 'annotated_tei.xml'
         return Response(out_xml, mimetype="application/xml",
@@ -1265,6 +1482,148 @@ def export_tei():
         import traceback
         traceback.print_exc()
         return Response(f"Export failed: {e}", status=500, mimetype='text/plain')
+
+
+def _page_to_tei_edit_serializable(page):
+    """Convert a session page dict to a JSON-serializable dict for TEI-edit file (no server paths, base64 for local images)."""
+    import base64
+    out = {
+        'lines': page.get('lines', []),
+        'html': page.get('html'),
+        'orig_width': page.get('orig_width', 0),
+        'orig_height': page.get('orig_height', 0),
+        'import_type': page.get('import_type', 'transkribus'),
+    }
+    image_src = (page.get('image_src') or '').strip()
+    filepath = page.get('file')
+    # Local image: stored in UPLOAD_FOLDER (image-only import or replaced image)
+    image_ext = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.tif')
+    if filepath and os.path.isfile(filepath) and filepath.lower().endswith(image_ext):
+        try:
+            with open(filepath, 'rb') as f:
+                data = f.read()
+            out['image_data_base64'] = base64.b64encode(data).decode('ascii')
+            out['image_filename'] = os.path.basename(filepath)
+            out['image_src'] = ''
+        except Exception:
+            out['image_src'] = image_src
+            out['image_data_base64'] = None
+    else:
+        out['image_src'] = image_src
+        out['image_data_base64'] = None
+    return out
+
+
+@app.route('/editor/save_tei_edit_file', methods=['POST'])
+def save_tei_edit_file():
+    """Save full edit state (all pages, tags, images) as a TEI-edit file for loading later."""
+    pages = session.get('pages')
+    if not pages:
+        return Response(json.dumps({'error': 'No document'}), status=400, mimetype='application/json')
+    # Persist current page HTML from request
+    if request.content_type and 'application/json' in (request.content_type or ''):
+        data = request.get_json(silent=True) or {}
+        html_content = data.get('html_content', '')
+        try:
+            current_index = int(data.get('current_page_index', session.get('current_page_index', 0)))
+        except (TypeError, ValueError):
+            current_index = session.get('current_page_index', 0)
+    else:
+        html_content = request.form.get('html_content', '')
+        try:
+            current_index = int(request.form.get('current_page_index', session.get('current_page_index', 0)))
+        except (TypeError, ValueError):
+            current_index = session.get('current_page_index', 0)
+    if 0 <= current_index < len(pages):
+        session['pages'][current_index]['html'] = html_content
+
+    payload = {
+        'version': 1,
+        'doc_meta': session.get('doc_meta') or {},
+        'current_page_index': session.get('current_page_index', 0),
+        'pages': [_page_to_tei_edit_serializable(p) for p in pages],
+    }
+    # Ensure doc_meta values are JSON-serializable (hands etc.)
+    doc_meta = payload['doc_meta']
+    if isinstance(doc_meta.get('hands'), list):
+        doc_meta = dict(doc_meta)
+        payload['doc_meta'] = doc_meta
+    json_bytes = json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8')
+    filename = 'project.tei-edit'
+    return Response(
+        json_bytes,
+        mimetype='application/json',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+    )
+
+
+@app.route('/load_tei_edit', methods=['POST'])
+@limiter.limit(_rate_upload)
+def load_tei_edit():
+    """Load a previously saved TEI-edit file and restore session (pages, doc_meta, images)."""
+    import base64
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return render_template('index.html', error='Please select a TEI-edit file.')
+    try:
+        raw = f.read()
+        if isinstance(raw, bytes):
+            raw = raw.decode('utf-8')
+        data = json.loads(raw)
+    except Exception as e:
+        return render_template('index.html', error=f'Invalid TEI-edit file: {e}')
+    if not isinstance(data.get('pages'), list) or not data['pages']:
+        return render_template('index.html', error='TEI-edit file has no pages.')
+    version = data.get('version', 0)
+    doc_meta = data.get('doc_meta') or {}
+    current_page_index = min(max(0, int(data.get('current_page_index', 0))), len(data['pages']) - 1)
+    restored_pages = []
+    for p in data['pages']:
+        page = {
+            'lines': p.get('lines', []),
+            'html': p.get('html'),
+            'orig_width': int(p.get('orig_width', 0)) or 0,
+            'orig_height': int(p.get('orig_height', 0)) or 0,
+            'import_type': p.get('import_type', 'transkribus'),
+            'image_src': (p.get('image_src') or '').strip(),
+            'from_tei_edit': True,
+        }
+        image_b64 = p.get('image_data_base64')
+        if image_b64:
+            try:
+                img_data = base64.b64decode(image_b64)
+                ext = '.png'
+                orig_name = p.get('image_filename') or 'image'
+                if orig_name.lower().endswith(('.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.tif')):
+                    ext = os.path.splitext(orig_name)[1].lower()
+                filename = f"{uuid.uuid4()}_restored{ext}"
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                with open(filepath, 'wb') as out:
+                    out.write(img_data)
+                page['file'] = filepath
+                page['img_url'] = url_for('send_upload', filename=filename)
+                page['image_src'] = ''
+            except Exception:
+                # Fallback: no image
+                page['file'] = None
+                page['img_url'] = ''
+        else:
+            image_src = page['image_src']
+            if image_src and (image_src.startswith('http://') or image_src.startswith('https://')):
+                page['img_url'] = url_for('proxy_image', url=image_src)
+            else:
+                page['img_url'] = ''
+            # Placeholder file so editor() has a path (optional but keeps logic simple)
+            placeholder = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_tei_edit_placeholder.xml")
+            with open(placeholder, 'w', encoding='utf-8') as out:
+                out.write('<?xml version="1.0"?><placeholder/>')
+            page['file'] = placeholder
+        restored_pages.append(page)
+    session['doc_meta'] = doc_meta
+    session['pages'] = restored_pages
+    session['current_page_index'] = current_page_index
+    return redirect(url_for('editor'))
+
 
 if __name__ == '__main__':
     import flaskwebgui

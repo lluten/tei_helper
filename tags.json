@@ -67,6 +67,21 @@
     "attrs": []
   },
   {
+    "code": "choice",
+    "label": "Abbreviation (abbr/expan)",
+    "category": "editorial",
+    "color": "#CE93D8",
+    "description": "Mark abbreviated text with its expansion. Selection = abbreviation (e.g. kl), expansion = full form (e.g. kalendas). Exports as <choice><abbr>...</abbr><expan>...</expan></choice>.",
+    "attrs": [
+      {
+        "name": "expan",
+        "label": "Expansion",
+        "desc": "Full form of the abbreviation (e.g. kalendas)",
+        "suggestions": []
+      }
+    ]
+  },
+  {
     "code": "date",
     "label": "Date",
     "category": "semantic",

@@ -48,9 +48,9 @@
                 </button>
                 {% endif %}
                 {% if request.endpoint == 'editor' %}
-                <button type="button" class="app-nav-menu-item app-nav-menu-btn-item" role="menuitem" onclick="var m=document.getElementById('appNavMenu'); if(m) m.classList.remove('show'); if(typeof doExport==='function') doExport('positional');">
-                    <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <span>Export positional XML</span>
+                <button type="button" class="app-nav-menu-item app-nav-menu-btn-item" role="menuitem" onclick="var m=document.getElementById('appNavMenu'); if(m) m.classList.remove('show'); if(typeof doSaveTeiEditFile==='function') doSaveTeiEditFile();">
+                    <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span>Save TEI-edit file</span>
                 </button>
                 <button type="button" class="app-nav-menu-item app-nav-menu-btn-item" role="menuitem" onclick="var m=document.getElementById('appNavMenu'); if(m) m.classList.remove('show'); if(typeof doExport==='function') doExport('clean');">
                     <svg class="app-nav-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

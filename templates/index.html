@@ -38,6 +38,14 @@
             {% endif %}
             <button type="submit" class="btn-block">Start Project</button>
         </form>
+        <div class="form-divider" style="margin: 1.5rem 0; text-align: center; color: var(--text-muted, #666); font-size: 0.9rem;">or</div>
+        <form action="{{ url_for('load_tei_edit') }}" method="POST" enctype="multipart/form-data" id="load-tei-edit-form">
+            <div class="file-drop-area" id="tei-edit-drop-area">
+                <span class="fake-btn">Choose file</span>
+                <span class="file-msg" id="tei-edit-file-msg">Load saved TEI-edit file (.tei-edit)</span>
+                <input class="file-input" type="file" name="file" id="tei-edit-file-input" accept=".tei-edit,.json" onchange="submitTeiEditFile(this)">
+            </div>
+        </form>
     </div>
     </div>
 
@@ -64,6 +72,12 @@
             } else {
                 msg.textContent = document.getElementById('import_type').value === 'image' ? 'or drag and drop here' : 'or drag and drop here (multiple allowed)';
                 area.classList.remove('is-active');
+            }
+        }
+        function submitTeiEditFile(input) {
+            if (input.files && input.files.length > 0) {
+                document.getElementById('tei-edit-file-msg').textContent = input.files[0].name;
+                document.getElementById('load-tei-edit-form').submit();
             }
         }
     </script>

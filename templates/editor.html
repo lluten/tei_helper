@@ -129,6 +129,7 @@
                 {% if total_pages and total_pages > 1 %}
                 <form method="post" action="{{ url_for('switch_page') }}" id="switch-page-form" class="image-page-controls-form">
                     <input type="hidden" name="html_content" id="switch-page-html">
+                    <input type="hidden" name="current_page_index" id="switch-page-current" value="{{ current_page_index | default(0) }}">
                     <input type="hidden" name="target_page_index" id="switch-page-target">
                     <input type="hidden" name="highlight_gram" id="switch-page-highlight">
                     <input type="hidden" name="keep_ligatures" id="switch-page-keep-ligatures">
@@ -148,6 +149,7 @@
         <div class="panel right-panel">
             <form method="post" action="{{ url_for('switch_page') }}" id="go-to-page-form" style="display:none;">
                 <input type="hidden" name="html_content" id="go-to-page-html">
+                <input type="hidden" name="current_page_index" id="go-to-page-current" value="{{ current_page_index | default(0) }}">
                 <input type="hidden" name="target_page_index" id="go-to-page-target">
                 <input type="hidden" name="highlight_gram" id="go-to-page-highlight">
                 <input type="hidden" name="keep_ligatures" id="go-to-page-keep-ligatures">
@@ -271,13 +273,17 @@
             <ul id="reorderPagesList" class="reorder-pages-list"></ul>
             <form id="reorderPagesForm" action="{{ url_for('reorder_pages') }}" method="POST" style="display:none;">
                 <input type="hidden" name="order" id="reorderPagesOrderInput">
+                <input type="hidden" name="html_content" id="reorderPagesHtml">
+                <input type="hidden" name="current_page_index" id="reorderPagesCurrent" value="{{ current_page_index | default(0) }}">
             </form>
             <form id="managePagesAddForm" action="{{ url_for('add_pages') }}" method="POST" enctype="multipart/form-data" style="display:none;">
                 <input type="hidden" name="html_content" id="managePagesAddHtml">
+                <input type="hidden" name="current_page_index" id="managePagesAddCurrent" value="{{ current_page_index | default(0) }}">
                 <input type="file" name="file" id="managePagesAddInput" multiple accept=".xml,image/*">
             </form>
             <form id="managePagesRemoveForm" action="{{ url_for('remove_pages') }}" method="POST" style="display:none;">
                 <input type="hidden" name="html_content" id="managePagesRemoveHtml">
+                <input type="hidden" name="current_page_index" id="managePagesRemoveCurrent" value="{{ current_page_index | default(0) }}">
                 <input type="hidden" name="indices" id="managePagesRemoveIndices">
             </form>
             <div class="reorder-pages-modal-actions">
@@ -391,6 +397,7 @@
             const form = document.getElementById('switch-page-form');
             if (!form) return;
             document.getElementById('switch-page-html').value = document.getElementById('editor').innerHTML;
+            document.getElementById('switch-page-current').value = currentPageIndex;
             document.getElementById('switch-page-target').value = targetIndex;
             const panel = document.getElementById('ligaturePanel');
             document.getElementById('switch-page-keep-ligatures').value = (panel && panel.classList.contains('is-open')) ? '1' : '';
@@ -401,6 +408,7 @@
             const form = document.getElementById('go-to-page-form');
             if (!form) return;
             document.getElementById('go-to-page-html').value = document.getElementById('editor').innerHTML;
+            document.getElementById('go-to-page-current').value = currentPageIndex;
             document.getElementById('go-to-page-target').value = pageIndex;
             document.getElementById('go-to-page-highlight').value = gram || '';
             const panel = document.getElementById('ligaturePanel');
@@ -435,6 +443,7 @@
                         const label = (pageLabels && pageLabels[pageIdx]) ? pageLabels[pageIdx] : ('Page ' + (pageIdx + 1));
                         if (!confirm("Remove page \"" + label + "\"? This cannot be undone.")) return;
                         document.getElementById('managePagesRemoveHtml').value = document.getElementById('editor').innerHTML;
+                        document.getElementById('managePagesRemoveCurrent').value = currentPageIndex;
                         document.getElementById('managePagesRemoveIndices').value = String(pageIdx);
                         document.getElementById('managePagesRemoveForm').submit();
                     });
@@ -478,8 +487,14 @@
         }
         function applyReorderPages() {
             if (!window._reorderPagesOrder) return;
+            var form = document.getElementById('reorderPagesForm');
+            if (!form) return;
             document.getElementById('reorderPagesOrderInput').value = window._reorderPagesOrder.join(',');
-            document.getElementById('reorderPagesForm').submit();
+            var editor = document.getElementById('editor');
+            if (editor) document.getElementById('reorderPagesHtml').value = editor.innerHTML;
+            document.getElementById('reorderPagesCurrent').value = currentPageIndex;
+            window._teiEditorSuppressUnloadSave = true;
+            form.submit();
         }
         (function setupManagePagesAdd() {
             const form = document.getElementById('managePagesAddForm');
@@ -488,6 +503,7 @@
             input.addEventListener('change', function() {
                 if (input.files && input.files.length) {
                     document.getElementById('managePagesAddHtml').value = document.getElementById('editor').innerHTML;
+                    document.getElementById('managePagesAddCurrent').value = currentPageIndex;
                     form.submit();
                 }
             });
@@ -520,6 +536,107 @@
         styleSheet.id = "tei-tag-styles";
         styleSheet.innerText = tags.map(t => `.tag-${t.code} { background-color: ${t.color}; }`).join("\n");
         document.head.appendChild(styleSheet);
+
+        // Auto-save editor content so it persists when navigating (e.g. to Tags, Doc info)
+        (function setupEditorAutoSave() {
+            const editor = document.getElementById('editor');
+            if (!editor) return;
+            const saveUrl = '{{ url_for("editor_save_page") }}';
+            let saveTimeout = null;
+            const DEBOUNCE_MS = 400;
+
+            function saveEditorPage(keepalive) {
+                const el = document.getElementById('editor');
+                if (!el) return;
+                const payload = JSON.stringify({ html_content: el.innerHTML, current_page_index: currentPageIndex });
+                const opts = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload
+                };
+                if (keepalive) opts.keepalive = true;
+                fetch(saveUrl, opts).catch(function() {});
+            }
+
+            function flushSaveAndReturnPromise() {
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = null;
+                }
+                const el = document.getElementById('editor');
+                if (!el) return Promise.resolve();
+                const payload = JSON.stringify({ html_content: el.innerHTML, current_page_index: currentPageIndex });
+                return fetch(saveUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload
+                }).catch(function() {});
+            }
+
+            function debouncedSave() {
+                if (saveTimeout) clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(function() {
+                    saveTimeout = null;
+                    saveEditorPage(false);
+                }, DEBOUNCE_MS);
+            }
+
+            editor.addEventListener('input', debouncedSave);
+            editor.addEventListener('paste', debouncedSave);
+            editor.addEventListener('cut', debouncedSave);
+
+            window.addEventListener('beforeunload', function() {
+                if (window._teiEditorSuppressUnloadSave) return;
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = null;
+                }
+                const el = document.getElementById('editor');
+                if (el) {
+                    const payload = JSON.stringify({ html_content: el.innerHTML, current_page_index: currentPageIndex });
+                    navigator.sendBeacon(saveUrl, new Blob([payload], { type: 'application/json' }));
+                }
+            });
+            window.addEventListener('pagehide', function() {
+                if (window._teiEditorSuppressUnloadSave) return;
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = null;
+                }
+                const el = document.getElementById('editor');
+                if (el) {
+                    const payload = JSON.stringify({ html_content: el.innerHTML, current_page_index: currentPageIndex });
+                    navigator.sendBeacon(saveUrl, new Blob([payload], { type: 'application/json' }));
+                }
+            });
+
+            window._teiEditorFlushSaveAndNavigate = function(href) {
+                flushSaveAndReturnPromise().then(function() {
+                    window.location.href = href;
+                });
+            };
+        })();
+
+        // Intercept all same-origin navigation: save editor content before leaving so markings never disappear on Back
+        (function setupNavSaveBeforeLeave() {
+            function intercept(link) {
+                var href = link.getAttribute('href');
+                if (!href || href === '#' || link.getAttribute('target') === '_blank') return;
+                if (href.indexOf('://') !== -1 && link.origin !== window.location.origin) return;
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (typeof window._teiEditorFlushSaveAndNavigate === 'function') {
+                        window._teiEditorFlushSaveAndNavigate(href);
+                    } else {
+                        window.location.href = href;
+                    }
+                });
+            }
+            document.querySelectorAll('.app-nav-menu-item[href]').forEach(intercept);
+            document.querySelectorAll('a[href^="/"]').forEach(function(link) {
+                if (!link.closest('.app-nav-menu')) intercept(link);
+            });
+        })();
         const handStyleSheet = document.createElement("style");
         handStyleSheet.id = "tei-hand-view-styles";
         handStyleSheet.innerText = HAND_VIEW_PALETTE.map((c, i) => `.editor-hand-view .hand-seg-${i} { background-color: ${c} !important; padding: 0 2px; border-radius: 2px; }\n.editor-hand-view span.hand-seg-${i} { background-color: ${c} !important; }`).join("\n") +
@@ -1131,6 +1248,29 @@
             document.getElementById('export_format').value = format;
             document.getElementById('html_content').value = document.getElementById('editor').innerHTML;
             document.getElementById('exportForm').submit();
+        }
+
+        function doSaveTeiEditFile() {
+            const editor = document.getElementById('editor');
+            if (!editor) return;
+            const payload = JSON.stringify({
+                html_content: editor.innerHTML,
+                current_page_index: currentPageIndex
+            });
+            fetch('{{ url_for("save_tei_edit_file") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload
+            }).then(function(resp) {
+                if (!resp.ok) throw new Error('Save failed');
+                return resp.blob();
+            }).then(function(blob) {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'project.tei-edit';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }).catch(function(err) { console.warn('Save TEI-edit file:', err); });
         }
         function togglePageInfo() {
             const bar = document.getElementById('pageInfoBar');
